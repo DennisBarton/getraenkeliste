@@ -1,0 +1,318 @@
+body{
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  font-family: Helvetica;
+  max-width: 1200px;
+}
+
+header,
+nav,
+article,
+footer {
+  padding:          10px;
+  border-radius:    5px;
+}
+
+header,
+footer {
+  background-color: cadetblue;
+}
+
+article,
+nav {
+  border-style: solid;
+  border-width: 5px;
+  border-color: cadetblue;
+}
+
+header {
+  grid-column: 1 / -1;
+  grid-row:    1 / 2;
+  padding: 10px;
+  font-size: xx-large;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+nav {
+  grid-column: 1 / -1;
+  grid-row:    2 / 3;
+  margin-bottom: 5px;
+}
+
+article {
+  grid-column: 1 / -1;
+  grid-row:    3 / 4;
+}
+
+footer {
+  grid-column: 1 / -1;
+  grid-row:    4 / 5;
+  margin-top: 10px;
+}
+/*
+
+
+
+*/
+/*--------------Navigation------------*/
+
+/*
+*/
+
+nav li  {
+  list-style-type: none;
+  text-decoration:none;
+}
+ul.subnav,
+nav ul{
+  list-style-type: none; 
+  margin: 0;
+  padding: 10px;
+  text-align: left;
+}
+
+a {
+  color: #000;
+  background-color:#ddd;
+  text-decoration: none;
+  font-family: Helvetica;
+  font-size: 18px;
+  padding:3px;
+  padding-bottom:1px;
+  border-radius:    5px;
+}
+
+a:hover {
+  background-color:darkcyan;
+  color:azure;
+}
+
+a:hover button{
+  padding: 0px;
+}
+
+
+ /* Remove default bullets */
+ul, #myUL {
+  list-style-type: none;
+}
+
+/* Remove margins and padding from the parent ul */
+#myUL {
+  margin: 0;
+  padding: 0;
+}
+
+/* Style the caret/arrow */
+.caret {
+  cursor: pointer;
+  user-select: none; /* Prevent text selection */
+}
+
+/* Create the caret/arrow with a unicode, and style it */
+.caret::before {
+  content: "\25B6";
+  color: black;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* Rotate the caret/arrow icon when clicked on (using JavaScript) */
+.caret-down::before {
+  transform: rotate(90deg);
+}
+
+/* Hide the nested list */
+.nested {
+  display: none;
+}
+
+/* Show the nested list when the user clicks on the caret/arrow (with JavaScript) */
+.active {
+  display: block;
+} 
+
+/*---Tables-------- */
+.styled-table {
+  border-left: 3px solid cadetblue;
+  border-right: 3px solid cadetblue;
+  border-collapse: collapse;
+  margin: 25px 0;
+  font-size: 0.9em;
+  font-family: sans-serif;
+  min-width: 400px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.styled-table thead tr {
+  background-color: cadetblue;
+  color: #ffffff;
+  text-align: center;
+}
+.styled-table th,
+.styled-table td {
+  padding: 6px 10px;
+}
+.styled-table tbody tr {
+  border-bottom: 1px solid #dddddd;
+  text-align: right;
+}
+
+/*Fuer inaktive Lieferanten etc. in der Tabelle
+ * muss nur gewaehlt werden, falls es diese 
+ * Unterscheidung gibt*/
+.styled-table tbody .tr_active {
+  color: black;
+}
+.styled-table tbody .tr_inactive {
+  color: grey;
+}
+
+
+
+.styled-table tbody tr:nth-of-type(even) {
+  background-color: #f3f3f3;
+}
+
+.styled-table tbody tr:last-of-type {
+  border-bottom: 3px solid cadetblue;
+}
+
+
+/*---Forms--------- */
+
+
+input[type=text], input[type=date] {
+  width:  100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+}
+
+input[type=text], select {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type=submit] {
+  width: 100%;
+  background-color: #4CAF50;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+input[type=submit]:hover {
+  background-color: #45a049;
+}
+
+.form{
+    margin: 5px;
+    float: left;
+ width: 300px;
+  border-radius: 5px;
+  background-color: #f2f2f2;
+  padding: 20px;
+}
+.form2{
+    margin: 5px;
+    float: left;
+ width: 300px;
+  border-radius: 5px;
+  background-color: #f2f2f2;
+  padding: 20px;
+}
+/* Inline quantity picker */
+.qty-inline-popup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 2px solid cadetblue;
+  border-radius: 6px;
+  padding: 4px 6px;
+  position: relative;
+  z-index: 50;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  margin-left: 4px;
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+.qty-inline-popup input.qty-input {
+  width: 60px;
+  padding: 3px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.qty-inline-popup .ok-btn {
+  background-color: cadetblue;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.qty-inline-popup .ok-btn:hover {
+  background-color: #3a8a8a;
+}
+
+.open-qty-inline {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: cadetblue;
+  transition: transform 0.1s;
+}
+
+.open-qty-inline:hover {
+  transform: scale(1.2);
+  color: #2a6b6b;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.qty-inline-popup {
+  background: #fff;
+  border: 2px solid cadetblue;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 2000;
+}
+
+.qty-inline-popup .qty-input {
+  width: 70px;
+  padding: 4px;
+  font-size: 0.9em;
+}
+
+.qty-inline-popup .ok-btn {
+  background: cadetblue;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.qty-inline-popup .ok-btn:hover {
+  background: darkcyan;
+}
