@@ -163,11 +163,17 @@ if (isset($_GET['date']) && $_GET['date'] === 'today') {
                   </div>
 
                   <?php foreach ($produktById as $produktId => $produkt): ?>
-                    <div>
-                      <label>
-                        <?= htmlspecialchars($produkt['name']) ?>:
-                        <input type="number" name="menge[<?= $produktId ?>]" min="0" max="999" style="width:40px"/>
-                      </label>
+                    <div class="produkt-popup" style="display:inline-flex; align-items:center; gap:4px; position:relative;">
+                      <label><?= htmlspecialchars($produkt['name']) ?>:</label>
+                      <button
+                        type="button"
+                        class="open-qty-popup"
+                        data-produkt-id="<?= $produktId ?>"
+                        data-produkt-name="<?= htmlspecialchars($produkt['name']) ?>">
+                        ➕</button>
+        
+                      </button>
+                      <input type="hidden" name="menge[<?= $produktId ?>]" value="0">
                       <input type="hidden" name="Verkaufspreis[<?= $produktId ?>]" value="<?= $produkt['preis'] ?>" />
                     </div>
                   <?php endforeach; ?>
@@ -430,6 +436,80 @@ document.addEventListener("DOMContentLoaded", () => {
       if (ev.key === "Enter") {
         ev.preventDefault();
         confirmAndSubmit();
+      } else if (ev.key === "Escape") {
+        popup.remove();
+        activePopup = null;
+      }
+    });
+  });
+});
+document.addEventListener("DOMContentLoaded", () => {
+  let activePopup = null;
+
+  document.body.addEventListener("click", (e) => {
+    const trigger = e.target.closest(".open-qty-popup");
+    const clickedInsidePopup = e.target.closest(".qty-popup");
+
+    // Close popup if clicking anywhere outside
+    if (activePopup && !trigger && !clickedInsidePopup) {
+      activePopup.remove();
+      activePopup = null;
+      return;
+    }
+
+    if (!trigger) return;
+    e.preventDefault();
+
+    // Close any active popup first
+    if (activePopup) activePopup.remove();
+
+    // Create popup element
+    const popup = document.createElement("div");
+    popup.className = "qty-popup";
+    popup.innerHTML = `
+      <input type="number" min="1" max="999" value="1" class="qty-input">
+      <button type="button" class="ok-btn">OK</button>
+    `;
+    document.body.appendChild(popup);
+
+    // Position popup below the trigger button
+    const rect = trigger.getBoundingClientRect();
+    popup.style.position = "fixed";
+    popup.style.left = `${rect.left}px`;
+    popup.style.top = `${rect.bottom + 5}px`;
+    popup.style.zIndex = "9999";
+
+    const input = popup.querySelector(".qty-input");
+    const okBtn = popup.querySelector(".ok-btn");
+    input.focus();
+    activePopup = popup;
+
+    // Confirm + update hidden field
+    const confirmQty = () => {
+      const qty = parseInt(input.value, 10);
+      if (isNaN(qty) || qty <= 0) {
+        popup.remove();
+        activePopup = null;
+        return;
+      }
+
+      const produktId = trigger.dataset.produktId;
+      const hiddenInput = trigger.closest(".produkt-popup").querySelector(`input[name='menge[${produktId}]']`);
+
+      if (hiddenInput) {
+        hiddenInput.value = qty;
+        trigger.textContent = `${qty}`;
+      }
+
+      popup.remove();
+      activePopup = null;
+    };
+
+    okBtn.addEventListener("click", confirmQty);
+    input.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        confirmQty();
       } else if (ev.key === "Escape") {
         popup.remove();
         activePopup = null;
