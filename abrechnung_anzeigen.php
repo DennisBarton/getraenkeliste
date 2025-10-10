@@ -269,83 +269,117 @@ function confirmVerkauf(event) {
     form.submit();
   }
 }
-/* Robust popup logic:
-   - click a td (product cell) to open popup
-   - supports existing in-cell form or creates a temporary form
-   - copies current row Person_ID into the form
-   - mobile-centered popup, touch-friendly
+
+/* Numeric keypad popup — robust & stable
+   - opens by clicking the table cell (only cells that belong to forms)
+   - stops click propagation so document-level close handlers don't race
+   - supports single-product forms (input[name="Menge"]) and new-entry multi-product forms (menge[ID])
+   - copies current row select[name="Person_ID"] into the form before confirm
 */
 document.addEventListener("DOMContentLoaded", () => {
   let activePopup = null;
+  let activeCell = null;
 
-  function closeActivePopup() {
+  // Helper to close active popup
+  function closePopup() {
     if (!activePopup) return;
     activePopup.remove();
     activePopup = null;
+    activeCell = null;
   }
 
-  document.body.addEventListener("click", (e) => {
-    const clickedInsidePopup = e.target.closest(".qty-inline-popup");
-    // find a td that represents a product cell (support multiple class patterns + data attr)
-    const td = e.target.closest("td[data-produkt], td.product-cell, td.cell-clickable, td.new-entry-cell");
+  // Open popup when clicking inside the table — delegate to the table element
+  const table = document.querySelector(".styled-table");
+  const clickContainer = table || document.body;
 
-    // if popup open and click is outside both popup and a clickable cell -> close
-    if (activePopup && !td && !clickedInsidePopup) {
-      closeActivePopup();
+  clickContainer.addEventListener("click", function tableClickHandler(e) {
+    // Ignore clicks on interactive controls (selects, inputs, buttons, anchors)
+    if (e.target.closest("select, input, button, a, label, textarea")) return;
+
+    const td = e.target.closest("td");
+    if (!td) return;
+
+    // Find the form for this cell: either inside the td or in parent tr (new-entry row)
+    let form = td.querySelector("form") || td.closest("tr")?.querySelector("form");
+    if (!form) return;
+
+    // Only open if the form can accept a quantity (either has 'Menge' or accepts menge[...] fields)
+    const acceptsSingle = !!form.querySelector("input[name='Menge']");
+    const acceptsArray  = !!form.querySelector("input[name^='menge']") || td.dataset.newentry === "true" || td.closest("tr")?.classList.contains("new-entry-row");
+    if (!acceptsSingle && !acceptsArray) return;
+
+    // Stop propagation so document handler won't immediately close the popup
+    e.stopPropagation();
+    e.preventDefault();
+
+    // If clicked same cell that's already open -> toggle close
+    if (activeCell === td) {
+      closePopup();
       return;
     }
 
-    // only act for clicks on product-cells
-    if (!td) return;
+    // Close any previous popup
+    closePopup();
 
-    e.preventDefault(); // prevent accidental form link behaviour
+    // create keypad popup element
+    const popup = document.createElement("div");
+    popup.className = "qty-inline-popup";
+    popup.innerHTML = `
+      <div class="qty-display" aria-live="polite">0</div>
+      <div class="qty-grid" role="grid">
+        ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" class="num-btn" data-num="${n}">${n}</button>`).join('')}
+        <button type="button" class="num-btn" data-action="clear">C</button>
+        <button type="button" class="num-btn" data-num="0">0</button>
+        <button type="button" class="num-btn" data-action="ok">+</button>
+      </div>
+    `;
+    document.body.appendChild(popup);
 
-    // remove any existing popup
-    closeActivePopup();
+    // Position popup: try above the cell; clamp to viewport
+    const rect = td.getBoundingClientRect();
+    // ensure we measure after element attached
+    const pRect = popup.getBoundingClientRect();
+    const width = Math.max(pRect.width, 160);
+    const height = pRect.height;
+    const margin = 8;
+    let left = rect.left + (rect.width / 2) - (width / 2);
+    let top  = rect.top - height - 10;
 
-    // Try to find an existing form inside the cell
-    let form = td.querySelector("form");
-    let createdTempForm = false;
+    // If not enough space above, show below
+    if (top < margin) {
+      top = rect.bottom + 10;
+    }
+    // Clamp to viewport horizontally
+    if (left < margin) left = margin;
+    if (left + width > window.innerWidth - margin) left = window.innerWidth - width - margin;
 
-    // If no form in the cell, create a temporary hidden form we'll submit
-    if (!form) {
-      form = document.createElement("form");
-      form.method = "post";
-      form.action = "eintrag_speichern.php";
-      form.style.display = "none";
-      // default hidden inputs (will be adjusted/copied below)
-      const fields = {
-        action: "verkauf",
-        Datum: td.dataset.datum || td.getAttribute("data-datum") || "",
-        Produkt_ID: td.dataset.produkt || td.getAttribute("data-produkt") || "",
-        Person_ID: td.dataset.person || td.getAttribute("data-person") || "",
-        Menge: "",
-        Verkaufspreis: td.dataset.preis || td.getAttribute("data-preis") || ""
-      };
-      for (const name in fields) {
-        const inp = document.createElement("input");
-        inp.type = "hidden";
-        inp.name = name;
-        inp.value = fields[name];
-        form.appendChild(inp);
-      }
-      document.body.appendChild(form);
-      createdTempForm = true;
-    } else {
-      // ensure the form has a Menge field we can set
-      if (!form.querySelector("input[name='Menge']")) {
-        const m = document.createElement("input");
-        m.type = "hidden";
-        m.name = "Menge";
-        m.value = "";
-        form.appendChild(m);
-      }
+    popup.style.position = "fixed";
+    popup.style.left = `${left}px`;
+    popup.style.top  = `${top}px`;
+    popup.style.zIndex = 9999;
+
+    // Prevent clicks inside the popup from bubbling up to document
+    popup.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+    });
+
+    // Save active refs
+    activePopup = popup;
+    activeCell = td;
+
+    // Ensure the form has a Menge field (hidden) or we'll add array-style later on OK
+    if (!form.querySelector("input[name='Menge']")) {
+      const hidden = document.createElement("input");
+      hidden.type = "hidden";
+      hidden.name = "Menge";
+      hidden.value = "";
+      form.appendChild(hidden);
     }
 
-    // ALWAYS copy the *current* row's Person selection into the form's Person_ID
+    // Copy current row's select[name='Person_ID'] into form hidden Person_ID (always override)
     const row = td.closest("tr");
-    const select = row ? row.querySelector("select[name='Person_ID']") : null;
-    if (select) {
+    const selectPerson = row ? row.querySelector("select[name='Person_ID']") : null;
+    if (selectPerson) {
       let personInput = form.querySelector("input[name='Person_ID']");
       if (!personInput) {
         personInput = document.createElement("input");
@@ -353,116 +387,80 @@ document.addEventListener("DOMContentLoaded", () => {
         personInput.name = "Person_ID";
         form.appendChild(personInput);
       }
-      personInput.value = select.value;
-    } else {
-      // fallback: use data-person attribute on cell if present
-      const dp = td.dataset.person;
-      const personInput = form.querySelector("input[name='Person_ID']");
-      if (personInput && dp) personInput.value = dp;
+      personInput.value = selectPerson.value;
     }
 
-    // Create popup
-    const popup = document.createElement("div");
-    popup.className = "qty-inline-popup";
-    popup.innerHTML = `
-      <span class="popup-plus">➕</span>
-      <input inputmode="numeric" type="number" min="1" max="999" class="qty-input" placeholder="1" />
-      <button type="button" class="ok-btn">OK</button>
-    `;
-    document.body.appendChild(popup);
-    activePopup = popup;
+    // Handle keypad clicks
+    const display = popup.querySelector(".qty-display");
 
-    const input = popup.querySelector(".qty-input");
-    const okBtn = popup.querySelector(".ok-btn");
+    popup.addEventListener("click", (ev) => {
+      const btn = ev.target.closest(".num-btn");
+      if (!btn) return;
+      const num = btn.dataset.num;
+      const action = btn.dataset.action;
 
-    // Positioning: on small screens center (so keyboard won't hide it), else center over the cell
-    requestAnimationFrame(() => {
-      const pRect = popup.getBoundingClientRect();
-      const tRect = td.getBoundingClientRect();
-      const margin = 8;
+      if (num !== undefined) {
+        // append digit (leading zero -> replace)
+        display.textContent = (display.textContent === "0") ? num : (display.textContent + num);
+      } else if (action === "clear") {
+        display.textContent = "0";
+      } else if (action === "ok") {
+        let qty = parseInt(display.textContent, 10);
+        if (isNaN(qty) || qty <= 0) qty = 1; // default to 1
 
-      if (window.innerWidth < 768) {
-        popup.classList.add("mobile-popup");
-        popup.style.position = "fixed";
-        popup.style.left = "50%";
-        popup.style.top  = "50%";
-        popup.style.transform = "translate(-50%, -50%)";
-      } else {
-        let left = tRect.left + (tRect.width / 2) - (pRect.width / 2);
-        let top  = tRect.top  + (tRect.height / 2) - (pRect.height / 2);
+        // Decide which field to set:
+        const produktId = td.dataset.produkt || td.getAttribute("data-produkt") || null;
+        const isNewEntryRow = !!td.dataset.newentry || !!td.closest("tr")?.classList.contains("new-entry-row");
+        const existingArrayField = produktId ? form.querySelector(`input[name="menge[${produktId}]"]`) : null;
 
-        if (left < margin) left = margin;
-        if (left + pRect.width > window.innerWidth - margin) left = window.innerWidth - pRect.width - margin;
-        if (top < margin) top = margin;
-        if (top + pRect.height > window.innerHeight - margin) top = window.innerHeight - pRect.height - margin;
-
-        popup.style.position = "fixed";
-        popup.style.left = `${left}px`;
-        popup.style.top  = `${top}px`;
-      }
-
-      // Put an empty value (placeholder '1') so typing on tablets replaces text (no "1" appended)
-      input.value = "";
-      input.focus();
-    });
-
-    // Confirm + submit handler
-    const confirmAndSubmit = () => {
-      let qty = parseInt(input.value, 10);
-      if (isNaN(qty) || qty <= 0) {
-        // default to 1 when left empty or invalid (more intuitive on touch)
-        qty = 1;
-      }
-
-      // set the form's Menge field
-      const mengeField = form.querySelector("input[name='Menge']");
-      if (mengeField) mengeField.value = qty;
-      else {
-        const mf = document.createElement("input");
-        mf.type = "hidden";
-        mf.name = "Menge";
-        mf.value = qty;
-        form.appendChild(mf);
-      }
-
-      // call existing confirm handler (will validate person etc.)
-      if (typeof confirmEintragNeu === "function") {
-        if (!confirmEintragNeu(form)) {
-          // user cancelled -> keep popup open or close? close for clarity
-          closeAndCleanup();
-          return;
+        if (existingArrayField) {
+          existingArrayField.value = qty;
+        } else if (isNewEntryRow && produktId) {
+          // Add or update menge[produktId]
+          let mf = form.querySelector(`input[name="menge[${produktId}]"]`);
+          if (!mf) {
+            mf = document.createElement("input");
+            mf.type = "hidden";
+            mf.name = `menge[${produktId}]`;
+            form.appendChild(mf);
+          }
+          mf.value = qty;
+        } else {
+          // fallback to single Menge field
+          const mengeField = form.querySelector("input[name='Menge']");
+          if (mengeField) mengeField.value = qty;
+          else {
+            const mf = document.createElement("input");
+            mf.type = "hidden";
+            mf.name = "Menge";
+            mf.value = qty;
+            form.appendChild(mf);
+          }
         }
-      }
 
-      // cleanup and submit
-      closeAndCleanup();
-      form.submit();
-    };
+        // Run confirmation (will validate person etc.)
+        if (typeof confirmEintragNeu === "function") {
+          if (!confirmEintragNeu(form)) {
+            // user cancelled
+            closePopup();
+            return;
+          }
+        }
 
-    // cleanup helper
-    function closeAndCleanup() {
-      closeActivePopup();
-      if (createdTempForm && form && form.parentNode) {
-        // remove temporary form after a short delay (allow submit to start)
-        setTimeout(() => {
-          if (form.parentNode) form.parentNode.removeChild(form);
-        }, 300);
-      }
-    }
-
-    okBtn.addEventListener("click", confirmAndSubmit);
-
-    input.addEventListener("keydown", (ev) => {
-      if (ev.key === "Enter") {
-        ev.preventDefault();
-        confirmAndSubmit();
-      } else if (ev.key === "Escape") {
-        closeAndCleanup();
+        // submit and cleanup
+        closePopup();
+        form.submit();
       }
     });
+  }); // end table click handler
 
-  }); // end body click listener
-}); // end DOMContentLoaded
+  // Close popup when clicking anywhere outside popup (document-level listener)
+  document.addEventListener("click", (e) => {
+    if (!activePopup) return;
+    // if clicked inside popup we already stopPropagation; so here it's outside -> close
+    closePopup();
+  });
+});
 // ----------------------
 // Neue Person hinzufügen (Green Plus Button)
 // ----------------------

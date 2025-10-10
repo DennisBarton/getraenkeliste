@@ -291,15 +291,6 @@ td.cell-clickable:hover {
 .styled-table th:last-child {
   border-right: none;
 }
-/* Plus icon inside popup */
-.qty-inline-popup .popup-plus {
-  font-size: 1.2em;
-  color: cadetblue;
-  margin-right: 6px;
-  line-height: 1;
-  display: inline-block;
-  vertical-align: middle;
-}
 /* -----------------------------
    Add Person Button and Popup
 ----------------------------- */
@@ -400,60 +391,126 @@ td.cell-clickable:hover {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-/* ============================
-   Popup (Mobile-Friendly Styling)
+* ============================
+   Numeric Numpad Popup (Mobile + Desktop)
    ============================ */
-.qty-inline-popup.mobile-popup {
+
+/* Fade-in animation */
+@keyframes fadeInFast {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Popup container */
+.qty-inline-popup {
   position: fixed;
-  z-index: 2000;
-  background-color: #fff;
+  z-index: 3000;
+  background: #fff;
   border: 2px solid cadetblue;
   border-radius: 12px;
-  padding: 1.2em 1.4em;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  padding: 0.8em;
+  width: 200px;
+  animation: fadeInFast 0.15s ease-out forwards;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: center;
-  gap: 1em;
-  min-width: 240px;
-  animation: fadeInFast 0.15s ease-in;
 }
 
-/* Bigger text and buttons for touch */
-.qty-inline-popup.mobile-popup .qty-input {
-  font-size: 1.4em;
-  width: 80px;
-  height: 48px;
-  text-align: center;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-.qty-inline-popup.mobile-popup .ok-btn {
-  font-size: 1.2em;
-  background-color: cadetblue;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.7em 1.4em;
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.15s ease;
-}
-
-.qty-inline-popup.mobile-popup .ok-btn:hover {
-  background-color: darkcyan;
-  transform: scale(1.05);
-}
-
-.qty-inline-popup.mobile-popup .popup-plus {
+/* Quantity display */
+.qty-inline-popup .qty-display {
   font-size: 1.6em;
-  color: cadetblue;
+  text-align: right;
+  padding: 6px 8px;
+  border-bottom: 2px solid cadetblue;
+  margin-bottom: 10px;
+  font-weight: 600;
+  line-height: 1.2;
   user-select: none;
 }
 
-/* Optional subtle backdrop when centered */
+/* Grid for numeric buttons */
+.qty-inline-popup .qty-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+/* Base keypad button */
+.qty-inline-popup .num-btn {
+  background-color: cadetblue;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.3em;
+  padding: 10px 0;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  touch-action: manipulation;
+}
+
+.qty-inline-popup .num-btn:hover {
+  background-color: darkcyan;
+}
+
+.qty-inline-popup .num-btn:active {
+  transform: scale(0.95);
+}
+
+/* Clear button */
+.qty-inline-popup .num-btn[data-action="clear"] {
+  background-color: #888;
+}
+
+.qty-inline-popup .num-btn[data-action="clear"]:hover {
+  background-color: #666;
+}
+
+/* ➕ OK button — full-width, red, larger */
+.qty-inline-popup .num-btn[data-action="ok"] {
+  background-color: #d9534f;
+  font-size: 1.6em;
+  font-weight: bold;
+  border-radius: 10px;
+  grid-column: 1 / -1;          /* spans all 3 columns */
+  padding: 12px 0;
+}
+
+.qty-inline-popup .num-btn[data-action="ok"]:hover {
+  background-color: #c9302c;
+}
+
+.qty-inline-popup .num-btn[data-action="ok"]:active {
+  background-color: #b52b27;
+  transform: scale(0.95);
+}
+
+/* Mobile layout adjustments */
 @media (max-width: 768px) {
-  .qty-inline-popup.mobile-popup::before {
+  .qty-inline-popup {
+    width: 80vw;
+    max-width: 280px;
+    padding: 1em;
+  }
+
+  .qty-inline-popup .qty-display {
+    font-size: 2em;
+  }
+
+  .qty-inline-popup .num-btn {
+    font-size: 1.6em;
+    padding: 12px 0;
+  }
+
+  .qty-inline-popup .num-btn[data-action="ok"] {
+    font-size: 2em;
+    padding: 14px 0;
+  }
+
+  /* Subtle backdrop for focus */
+  .qty-inline-popup::before {
     content: "";
     position: fixed;
     inset: 0;
@@ -461,8 +518,3 @@ td.cell-clickable:hover {
     z-index: -1;
   }
 }
-.qty-inline-popup.mobile-popup .ok-btn:active {
-  background-color: #3d8686;
-  transform: scale(0.97);
-}
-
