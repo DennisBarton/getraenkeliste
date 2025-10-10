@@ -1,4 +1,6 @@
--- Minimal test data for abrechnung_test database
+CREATE DATABASE IF NOT EXISTS abrechnung_test;
+USE abrechnung_test;
+
 CREATE TABLE IF NOT EXISTS db_personen (
   person_id INT AUTO_INCREMENT PRIMARY KEY,
   vorname VARCHAR(100),
@@ -21,7 +23,7 @@ CREATE TABLE IF NOT EXISTS db_eintrag (
 );
 
 INSERT INTO db_personen (vorname, nachname) VALUES
-('Anna', 'Müller'),
+('Anna', 'Muller'),
 ('Max', 'Schmidt');
 
 INSERT INTO db_produkte_standard (name, preis) VALUES

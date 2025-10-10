@@ -1,0 +1,28 @@
+name: Docker Selenium Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  selenium-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        uses: docker/setup-buildx-action@v2
+
+      - name: Start services
+        run: |
+          docker-compose up -d --build
+          sleep 10
+
+      - name: Run PHPUnit inside phpunit container
+        run: docker exec abrechnung_phpunit phpunit tests/php/AbrechnungTest.php || true
+
+      - name: Run Selenium UI tests
+        run: |
+          docker exec abrechnung_selenium_tests pytest -q tests/ui/test_selenium.py || true

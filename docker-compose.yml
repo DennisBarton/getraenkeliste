@@ -1,4 +1,3 @@
-
 version: '3.8'
 services:
   php:
@@ -10,10 +9,6 @@ services:
       - "8080:80"
     environment:
       APACHE_DOCUMENT_ROOT: /var/www/html
-      DB_HOST: db
-      DB_NAME: abrechnung_test
-      DB_USER: root
-      DB_PASS: root
     depends_on:
       - db
 
@@ -25,13 +20,13 @@ services:
       MYSQL_DATABASE: abrechnung_test
     ports:
       - "3306:3306"
+    volumes:
+      - ./tests/test_data.sql:/docker-entrypoint-initdb.d/test_data.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 3
-    volumes:
-      - ./tests/test_data.sql:/docker-entrypoint-initdb.d/test_data.sql
 
   phpunit:
     build: ./docker/phpunit
@@ -41,14 +36,23 @@ services:
     depends_on:
       - db
 
-  playwright:
-    image: mcr.microsoft.com/playwright:focal
-    container_name: abrechnung_playwright
-    volumes:
-      - ./:/workspace:cached
-    working_dir: /workspace
-    entrypoint: ["/bin/bash", "-c"]
-    command: ["while true; do sleep 1000; done"]
+  selenium:
+    image: selenium/standalone-chrome:4.11.0-20231030
+    container_name: abrechnung_selenium
+    ports:
+      - "4444:4444"
+    shm_size: '2gb'
     depends_on:
       - php
-      - db
+
+  selenium-tests:
+    build: ./docker/selenium-tests
+    container_name: abrechnung_selenium_tests
+    volumes:
+      - ./:/workspace:cached
+    depends_on:
+      - selenium
+      - php
+    environment:
+      SELENIUM_URL: http://selenium:4444/wd/hub
+      APP_URL: http://php:80/abrechnung_anzeigen.php?date=today
