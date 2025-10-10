@@ -37,7 +37,7 @@ services:
       - db
 
   selenium:
-    image: selenium/standalone-chrome:4.11.0-20231030
+    image: selenium/standalone-chrome:4.17.0
     container_name: abrechnung_selenium
     ports:
       - "4444:4444"
