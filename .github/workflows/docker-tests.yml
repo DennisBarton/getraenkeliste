@@ -27,4 +27,4 @@ jobs:
 
       - name: Run Playwright tests
         run: |
-          docker exec -u root abrechnung_playwright bash -lc "cd /workspace && npm ci && npx playwright install --with-deps && npx playwright test --reporter=github"
+          docker exec -u root abrechnung_playwright bash -lc "cd /workspace && npm install && npx playwright install --with-deps && npx playwright test --reporter=github"
