@@ -269,120 +269,200 @@ function confirmVerkauf(event) {
     form.submit();
   }
 }
-
-/* ---------- Popup logic: click the TD (cell), not a small button ---------- */
+/* Robust popup logic:
+   - click a td (product cell) to open popup
+   - supports existing in-cell form or creates a temporary form
+   - copies current row Person_ID into the form
+   - mobile-centered popup, touch-friendly
+*/
 document.addEventListener("DOMContentLoaded", () => {
   let activePopup = null;
 
+  function closeActivePopup() {
+    if (!activePopup) return;
+    activePopup.remove();
+    activePopup = null;
+  }
+
   document.body.addEventListener("click", (e) => {
     const clickedInsidePopup = e.target.closest(".qty-inline-popup");
-    const td = e.target.closest("td.cell-clickable");
+    // find a td that represents a product cell (support multiple class patterns + data attr)
+    const td = e.target.closest("td[data-produkt], td.product-cell, td.cell-clickable, td.new-entry-cell");
 
-    // If popup open and click is outside cells and popup → close popup
+    // if popup open and click is outside both popup and a clickable cell -> close
     if (activePopup && !td && !clickedInsidePopup) {
-      activePopup.remove();
-      activePopup = null;
+      closeActivePopup();
       return;
     }
 
-    // Only act when clicking a clickable td
+    // only act for clicks on product-cells
     if (!td) return;
-    e.preventDefault();
 
-    // find the form inside the clicked cell (each clickable cell must contain its form)
-    const form = td.querySelector("form");
-    if (!form) return; // nothing to submit
+    e.preventDefault(); // prevent accidental form link behaviour
 
-    // remove previous popup if present
-    if (activePopup) {
-      activePopup.remove();
-      activePopup = null;
+    // remove any existing popup
+    closeActivePopup();
+
+    // Try to find an existing form inside the cell
+    let form = td.querySelector("form");
+    let createdTempForm = false;
+
+    // If no form in the cell, create a temporary hidden form we'll submit
+    if (!form) {
+      form = document.createElement("form");
+      form.method = "post";
+      form.action = "eintrag_speichern.php";
+      form.style.display = "none";
+      // default hidden inputs (will be adjusted/copied below)
+      const fields = {
+        action: "verkauf",
+        Datum: td.dataset.datum || td.getAttribute("data-datum") || "",
+        Produkt_ID: td.dataset.produkt || td.getAttribute("data-produkt") || "",
+        Person_ID: td.dataset.person || td.getAttribute("data-person") || "",
+        Menge: "",
+        Verkaufspreis: td.dataset.preis || td.getAttribute("data-preis") || ""
+      };
+      for (const name in fields) {
+        const inp = document.createElement("input");
+        inp.type = "hidden";
+        inp.name = name;
+        inp.value = fields[name];
+        form.appendChild(inp);
+      }
+      document.body.appendChild(form);
+      createdTempForm = true;
+    } else {
+      // ensure the form has a Menge field we can set
+      if (!form.querySelector("input[name='Menge']")) {
+        const m = document.createElement("input");
+        m.type = "hidden";
+        m.name = "Menge";
+        m.value = "";
+        form.appendChild(m);
+      }
     }
 
-    // create popup element
+    // ALWAYS copy the *current* row's Person selection into the form's Person_ID
+    const row = td.closest("tr");
+    const select = row ? row.querySelector("select[name='Person_ID']") : null;
+    if (select) {
+      let personInput = form.querySelector("input[name='Person_ID']");
+      if (!personInput) {
+        personInput = document.createElement("input");
+        personInput.type = "hidden";
+        personInput.name = "Person_ID";
+        form.appendChild(personInput);
+      }
+      personInput.value = select.value;
+    } else {
+      // fallback: use data-person attribute on cell if present
+      const dp = td.dataset.person;
+      const personInput = form.querySelector("input[name='Person_ID']");
+      if (personInput && dp) personInput.value = dp;
+    }
+
+    // Create popup
     const popup = document.createElement("div");
     popup.className = "qty-inline-popup";
     popup.innerHTML = `
       <span class="popup-plus">➕</span>
-      <input type="number" min="1" max="999" value="1" class="qty-input" />
+      <input inputmode="numeric" type="number" min="1" max="999" class="qty-input" placeholder="1" />
       <button type="button" class="ok-btn">OK</button>
     `;
     document.body.appendChild(popup);
-
-    // position popup centered over the clicked td; clamp to viewport
-    const rect = td.getBoundingClientRect();
-    const popupRect = popup.getBoundingClientRect();
-    const margin = 8;
-    let left = rect.left + (rect.width / 2) - (popupRect.width / 2);
-    let top  = rect.top  + (rect.height / 2) - (popupRect.height / 2);
-
-    if (left < margin) left = margin;
-    if (left + popupRect.width > window.innerWidth - margin) left = window.innerWidth - popupRect.width - margin;
-    if (top < margin) top = margin;
-    if (top + popupRect.height > window.innerHeight - margin) top = window.innerHeight - popupRect.height - margin;
-
-    popup.style.position = "fixed";
-    popup.style.left = `${left}px`;
-    popup.style.top  = `${top}px`;
-    popup.style.zIndex = 9999;
-
-    // focus
-    const input = popup.querySelector(".qty-input");
-    const okBtn = popup.querySelector(".ok-btn");
-    input.focus();
     activePopup = popup;
 
-    // ALWAYS copy the current row's Person selection into the form's hidden Person_ID
-    // (this fixes the bug where the hidden Person_ID kept a previous value)
-    const personField = form.querySelector("input[name='Person_ID']");
-    const row = form.closest("tr");
-    const select = row ? row.querySelector("select[name='Person_ID']") : null;
-    if (personField) {
-      // copy even if personField already had a value; override with current select if found
-      personField.value = select ? select.value : (personField.value || "");
-    }
+    const input = popup.querySelector(".qty-input");
+    const okBtn = popup.querySelector(".ok-btn");
 
-    // OK handler: validate, confirm and submit
+    // Positioning: on small screens center (so keyboard won't hide it), else center over the cell
+    requestAnimationFrame(() => {
+      const pRect = popup.getBoundingClientRect();
+      const tRect = td.getBoundingClientRect();
+      const margin = 8;
+
+      if (window.innerWidth < 768) {
+        popup.classList.add("mobile-popup");
+        popup.style.position = "fixed";
+        popup.style.left = "50%";
+        popup.style.top  = "50%";
+        popup.style.transform = "translate(-50%, -50%)";
+      } else {
+        let left = tRect.left + (tRect.width / 2) - (pRect.width / 2);
+        let top  = tRect.top  + (tRect.height / 2) - (pRect.height / 2);
+
+        if (left < margin) left = margin;
+        if (left + pRect.width > window.innerWidth - margin) left = window.innerWidth - pRect.width - margin;
+        if (top < margin) top = margin;
+        if (top + pRect.height > window.innerHeight - margin) top = window.innerHeight - pRect.height - margin;
+
+        popup.style.position = "fixed";
+        popup.style.left = `${left}px`;
+        popup.style.top  = `${top}px`;
+      }
+
+      // Put an empty value (placeholder '1') so typing on tablets replaces text (no "1" appended)
+      input.value = "";
+      input.focus();
+    });
+
+    // Confirm + submit handler
     const confirmAndSubmit = () => {
-      const qty = parseInt(input.value, 10);
+      let qty = parseInt(input.value, 10);
       if (isNaN(qty) || qty <= 0) {
-        alert("Bitte eine Menge größer als 0 eingeben.");
-        input.focus();
-        return;
+        // default to 1 when left empty or invalid (more intuitive on touch)
+        qty = 1;
       }
 
-      // set the Menge field inside the form
-      const mengeField = form.querySelector("input[name='Menge']") || form.querySelector("input[name^='menge']");
-      if (mengeField) {
-        // if the form uses a hidden 'Menge' input (single-product form)
-        if (mengeField.name === 'Menge') mengeField.value = qty;
-        else mengeField.value = qty; // handles single menge[...] hidden input as well
+      // set the form's Menge field
+      const mengeField = form.querySelector("input[name='Menge']");
+      if (mengeField) mengeField.value = qty;
+      else {
+        const mf = document.createElement("input");
+        mf.type = "hidden";
+        mf.name = "Menge";
+        mf.value = qty;
+        form.appendChild(mf);
       }
 
-      // call confirm (shows summary and asks user)
+      // call existing confirm handler (will validate person etc.)
       if (typeof confirmEintragNeu === "function") {
         if (!confirmEintragNeu(form)) {
-          popup.remove();
-          activePopup = null;
+          // user cancelled -> keep popup open or close? close for clarity
+          closeAndCleanup();
           return;
         }
       }
 
-      // submit form
-      popup.remove();
-      activePopup = null;
+      // cleanup and submit
+      closeAndCleanup();
       form.submit();
     };
 
+    // cleanup helper
+    function closeAndCleanup() {
+      closeActivePopup();
+      if (createdTempForm && form && form.parentNode) {
+        // remove temporary form after a short delay (allow submit to start)
+        setTimeout(() => {
+          if (form.parentNode) form.parentNode.removeChild(form);
+        }, 300);
+      }
+    }
+
     okBtn.addEventListener("click", confirmAndSubmit);
 
-    // keyboard support
     input.addEventListener("keydown", (ev) => {
-      if (ev.key === "Enter") { ev.preventDefault(); confirmAndSubmit(); }
-      else if (ev.key === "Escape") { popup.remove(); activePopup = null; }
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        confirmAndSubmit();
+      } else if (ev.key === "Escape") {
+        closeAndCleanup();
+      }
     });
-  });
-});
+
+  }); // end body click listener
+}); // end DOMContentLoaded
 // ----------------------
 // Neue Person hinzufügen (Green Plus Button)
 // ----------------------
