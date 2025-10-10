@@ -46,7 +46,9 @@ services:
       - php
 
   selenium-tests:
-    build: ./docker/selenium-tests
+    build:
+      context: .
+      dockerfile: ./docker/selenium-tests/Dockerfile
     container_name: abrechnung_selenium_tests
     volumes:
       - ./:/workspace:cached
