@@ -17,7 +17,7 @@ jobs:
 
       - name: Start services
         run: |
-          docker-compose up -d --build
+          /usr/libexec/docker/cli-plugins/docker-compose up -d --build
           sleep 10
 
       - name: Run PHPUnit inside phpunit container
