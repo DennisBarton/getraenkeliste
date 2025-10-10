@@ -400,3 +400,69 @@ td.cell-clickable:hover {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+/* ============================
+   Popup (Mobile-Friendly Styling)
+   ============================ */
+.qty-inline-popup.mobile-popup {
+  position: fixed;
+  z-index: 2000;
+  background-color: #fff;
+  border: 2px solid cadetblue;
+  border-radius: 12px;
+  padding: 1.2em 1.4em;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1em;
+  min-width: 240px;
+  animation: fadeInFast 0.15s ease-in;
+}
+
+/* Bigger text and buttons for touch */
+.qty-inline-popup.mobile-popup .qty-input {
+  font-size: 1.4em;
+  width: 80px;
+  height: 48px;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.qty-inline-popup.mobile-popup .ok-btn {
+  font-size: 1.2em;
+  background-color: cadetblue;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7em 1.4em;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.qty-inline-popup.mobile-popup .ok-btn:hover {
+  background-color: darkcyan;
+  transform: scale(1.05);
+}
+
+.qty-inline-popup.mobile-popup .popup-plus {
+  font-size: 1.6em;
+  color: cadetblue;
+  user-select: none;
+}
+
+/* Optional subtle backdrop when centered */
+@media (max-width: 768px) {
+  .qty-inline-popup.mobile-popup::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: -1;
+  }
+}
+.qty-inline-popup.mobile-popup .ok-btn:active {
+  background-color: #3d8686;
+  transform: scale(0.97);
+}
+
