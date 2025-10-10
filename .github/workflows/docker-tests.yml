@@ -18,7 +18,7 @@ jobs:
 
       - name: Start services
         run: |
-          docker-compose up -d --build
+          /usr/libexec/docker/cli-plugins/docker-compose up -d --build
           # wait for services (simple wait)
           sleep 8
 
