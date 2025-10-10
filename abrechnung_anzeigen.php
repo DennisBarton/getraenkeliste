@@ -270,11 +270,13 @@ function confirmVerkauf(event) {
   }
 }
 
+
 /* Numeric keypad popup — robust & stable
    - opens by clicking the table cell (only cells that belong to forms)
    - stops click propagation so document-level close handlers don't race
    - supports single-product forms (input[name="Menge"]) and new-entry multi-product forms (menge[ID])
    - copies current row select[name="Person_ID"] into the form before confirm
+   - smart placement & draggable on mobile
 */
 document.addEventListener("DOMContentLoaded", () => {
   let activePopup = null;
@@ -288,40 +290,83 @@ document.addEventListener("DOMContentLoaded", () => {
     activeCell = null;
   }
 
-  // Open popup when clicking inside the table — delegate to the table element
+  // Smart popup placement inside viewport
+  function placePopup(popup, rect) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const popupW = popup.offsetWidth || 180;
+    const popupH = popup.offsetHeight || 200;
+    const margin = 8;
+
+    let left = rect.left + rect.width / 2 - popupW / 2;
+    let top = rect.bottom + 10;
+
+    // If popup would overflow bottom -> place above
+    if (top + popupH > vh - margin) top = rect.top - popupH - 10;
+    if (top < margin) top = margin;
+    if (left < margin) left = margin;
+    if (left + popupW > vw - margin) left = vw - popupW - margin;
+
+    popup.style.left = `${left}px`;
+    popup.style.top = `${top}px`;
+  }
+
+  // Make popup draggable (touch + mouse)
+  function makeDraggable(el) {
+    let startX, startY, initLeft, initTop;
+    const onMove = (ev) => {
+      ev.preventDefault();
+      const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const y = ev.touches ? ev.touches[0].clientY : ev.clientY;
+      el.style.left = `${initLeft + (x - startX)}px`;
+      el.style.top = `${initTop + (y - startY)}px`;
+    };
+    const onEnd = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("touchmove", onMove);
+    };
+    const onStart = (ev) => {
+      const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
+      const y = ev.touches ? ev.touches[0].clientY : ev.clientY;
+      const rect = el.getBoundingClientRect();
+      startX = x; startY = y;
+      initLeft = rect.left; initTop = rect.top;
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("touchmove", onMove, { passive: false });
+      document.addEventListener("mouseup", onEnd, { once: true });
+      document.addEventListener("touchend", onEnd, { once: true });
+    };
+    el.addEventListener("mousedown", onStart);
+    el.addEventListener("touchstart", onStart, { passive: false });
+  }
+
+  // Open popup when clicking inside the table
   const table = document.querySelector(".styled-table");
   const clickContainer = table || document.body;
 
   clickContainer.addEventListener("click", function tableClickHandler(e) {
-    // Ignore clicks on interactive controls (selects, inputs, buttons, anchors)
     if (e.target.closest("select, input, button, a, label, textarea")) return;
 
     const td = e.target.closest("td");
     if (!td) return;
 
-    // Find the form for this cell: either inside the td or in parent tr (new-entry row)
     let form = td.querySelector("form") || td.closest("tr")?.querySelector("form");
     if (!form) return;
 
-    // Only open if the form can accept a quantity (either has 'Menge' or accepts menge[...] fields)
     const acceptsSingle = !!form.querySelector("input[name='Menge']");
     const acceptsArray  = !!form.querySelector("input[name^='menge']") || td.dataset.newentry === "true" || td.closest("tr")?.classList.contains("new-entry-row");
     if (!acceptsSingle && !acceptsArray) return;
 
-    // Stop propagation so document handler won't immediately close the popup
     e.stopPropagation();
     e.preventDefault();
 
-    // If clicked same cell that's already open -> toggle close
     if (activeCell === td) {
       closePopup();
       return;
     }
-
-    // Close any previous popup
     closePopup();
 
-    // create keypad popup element
+    // Create popup
     const popup = document.createElement("div");
     popup.className = "qty-inline-popup";
     popup.innerHTML = `
@@ -335,39 +380,17 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     document.body.appendChild(popup);
 
-    // Position popup: try above the cell; clamp to viewport
-    const rect = td.getBoundingClientRect();
-    // ensure we measure after element attached
-    const pRect = popup.getBoundingClientRect();
-    const width = Math.max(pRect.width, 160);
-    const height = pRect.height;
-    const margin = 8;
-    let left = rect.left + (rect.width / 2) - (width / 2);
-    let top  = rect.top - height - 10;
-
-    // If not enough space above, show below
-    if (top < margin) {
-      top = rect.bottom + 10;
-    }
-    // Clamp to viewport horizontally
-    if (left < margin) left = margin;
-    if (left + width > window.innerWidth - margin) left = window.innerWidth - width - margin;
-
     popup.style.position = "fixed";
-    popup.style.left = `${left}px`;
-    popup.style.top  = `${top}px`;
     popup.style.zIndex = 9999;
 
-    // Prevent clicks inside the popup from bubbling up to document
-    popup.addEventListener("click", (ev) => {
-      ev.stopPropagation();
-    });
+    placePopup(popup, td.getBoundingClientRect());
+    makeDraggable(popup);
 
-    // Save active refs
     activePopup = popup;
     activeCell = td;
 
-    // Ensure the form has a Menge field (hidden) or we'll add array-style later on OK
+    popup.addEventListener("click", (ev) => ev.stopPropagation());
+
     if (!form.querySelector("input[name='Menge']")) {
       const hidden = document.createElement("input");
       hidden.type = "hidden";
@@ -376,7 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
       form.appendChild(hidden);
     }
 
-    // Copy current row's select[name='Person_ID'] into form hidden Person_ID (always override)
+    // Copy row's select[name='Person_ID'] if present
     const row = td.closest("tr");
     const selectPerson = row ? row.querySelector("select[name='Person_ID']") : null;
     if (selectPerson) {
@@ -390,7 +413,6 @@ document.addEventListener("DOMContentLoaded", () => {
       personInput.value = selectPerson.value;
     }
 
-    // Handle keypad clicks
     const display = popup.querySelector(".qty-display");
 
     popup.addEventListener("click", (ev) => {
@@ -400,15 +422,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const action = btn.dataset.action;
 
       if (num !== undefined) {
-        // append digit (leading zero -> replace)
-        display.textContent = (display.textContent === "0") ? num : (display.textContent + num);
+        display.textContent = display.textContent === "0" ? num : display.textContent + num;
       } else if (action === "clear") {
         display.textContent = "0";
       } else if (action === "ok") {
         let qty = parseInt(display.textContent, 10);
-        if (isNaN(qty) || qty <= 0) qty = 1; // default to 1
+        if (isNaN(qty) || qty <= 0) qty = 1;
 
-        // Decide which field to set:
         const produktId = td.dataset.produkt || td.getAttribute("data-produkt") || null;
         const isNewEntryRow = !!td.dataset.newentry || !!td.closest("tr")?.classList.contains("new-entry-row");
         const existingArrayField = produktId ? form.querySelector(`input[name="menge[${produktId}]"]`) : null;
@@ -416,7 +436,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (existingArrayField) {
           existingArrayField.value = qty;
         } else if (isNewEntryRow && produktId) {
-          // Add or update menge[produktId]
           let mf = form.querySelector(`input[name="menge[${produktId}]"]`);
           if (!mf) {
             mf = document.createElement("input");
@@ -426,7 +445,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           mf.value = qty;
         } else {
-          // fallback to single Menge field
           const mengeField = form.querySelector("input[name='Menge']");
           if (mengeField) mengeField.value = qty;
           else {
@@ -438,29 +456,26 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
 
-        // Run confirmation (will validate person etc.)
         if (typeof confirmEintragNeu === "function") {
           if (!confirmEintragNeu(form)) {
-            // user cancelled
             closePopup();
             return;
           }
         }
 
-        // submit and cleanup
         closePopup();
         form.submit();
       }
     });
-  }); // end table click handler
+  });
 
-  // Close popup when clicking anywhere outside popup (document-level listener)
+  // Close popup on outside click
   document.addEventListener("click", (e) => {
     if (!activePopup) return;
-    // if clicked inside popup we already stopPropagation; so here it's outside -> close
     closePopup();
   });
 });
+
 // ----------------------
 // Neue Person hinzufügen (Green Plus Button)
 // ----------------------
