@@ -7,14 +7,22 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
 
 SELENIUM_URL = os.environ.get("SELENIUM_URL", "http://selenium:4444/wd/hub")
 APP_URL = os.environ.get("APP_URL", "http://php:80/abrechnung_anzeigen.php?date=today")
 
 @pytest.fixture(scope='module')
 def driver() -> WebDriver:
-    caps = DesiredCapabilities.CHROME.copy()
-    driver = webdriver.Remote(command_executor=SELENIUM_URL, desired_capabilities=caps)
+    options = Options()
+    options.add_argument("--headless")         # run Chrome without GUI (recommended for CI)
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+
+    driver = webdriver.Remote(
+        command_executor=SELENIUM_URL,
+        options=options
+    )
     yield driver
     driver.quit()
 
