@@ -4,25 +4,25 @@ services:
   php:
     image: php:8.1-apache
     container_name: abrechnung_php
-    environment:
-      DB_HOST: db
-      DB_NAME: abrechnung_test
-      DB_USER: root
-      DB_PASS: root
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: abrechnung_test
     volumes:
       - ./:/var/www/html:cached
     ports:
       - "8080:80"
     environment:
       APACHE_DOCUMENT_ROOT: /var/www/html
+      DB_HOST: db
+      DB_NAME: abrechnung_test
+      DB_USER: root
+      DB_PASS: root
     depends_on:
       - db
 
   db:
     image: mysql:8.0
     container_name: abrechnung_db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: abrechnung_test
     ports:
       - "3306:3306"
     healthcheck:
