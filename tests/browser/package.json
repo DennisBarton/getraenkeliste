@@ -1,0 +1,11 @@
+{
+  "name": "abrechnung-tests",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "playwright": "^1.36.0"
+  },
+  "scripts": {
+    "test:ui": "playwright test"
+  }
+}
