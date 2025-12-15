@@ -426,8 +426,20 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (action === "clear") {
         display.textContent = "0";
       } else if (action === "ok") {
-        let qty = parseInt(display.textContent, 10);
-        if (isNaN(qty) || qty <= 0) qty = 1;
+      let qty = parseInt(display.textContent, 10);
+
+      // 🚫 Reject 0 or invalid input (visual feedback only)
+      if (isNaN(qty) || qty <= 0) {
+        display.style.color = "#c62828";   // flash red
+        display.style.transform = "scale(1.05)";
+
+        setTimeout(() => {
+          display.style.color = "";
+          display.style.transform = "";
+        }, 600);
+
+        return; // do NOT submit, do NOT close popup
+      }
 
         const produktId = td.dataset.produkt || td.getAttribute("data-produkt") || null;
         const isNewEntryRow = !!td.dataset.newentry || !!td.closest("tr")?.classList.contains("new-entry-row");
