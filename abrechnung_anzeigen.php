@@ -99,7 +99,7 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
                 $anzahl = $personData['produkte'][$produktId] ?? 0;
                 $betrag += $anzahl * $produkt['preis']; ?>
                 <td class="col-prod cell-clickable">
-                    <?php if ($anzahl > 0): ?><span class="anzahl"><?= $anzahl ?></span><?php endif; ?>
+                    <?php if ($anzahl != 0): ?><span class="anzahl"><?= $anzahl ?></span><?php endif; ?>
                     <?php if (!$showPaid): ?>
                       <form action="eintrag_speichern.php" method="post" class="cell-click-form" onsubmit="return confirmEintragNeu(this)">
                           <input type="hidden" name="action" value="<?= $isCorrectionMode ? 'korrektur' : 'verkauf' ?>">
