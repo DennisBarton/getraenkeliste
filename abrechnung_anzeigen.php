@@ -1,15 +1,13 @@
 <?php
 // ============================================================
-// Abrechnung Anzeigen - Cleaned Version
-// Generates overview of open/paid amounts with popup quantity entry
+// Abrechnung Anzeigen - Cleaned Version (Single-value submissions only)
+// Popup is placed next to the clicked cell and cell is highlighted
 // ============================================================
-
-
 
 $site_name = "Abrechnung";
 include("./includes/header.php");
 
-// Add this block before the rest
+// Correction mode banner
 $isCorrectionMode = isset($_GET['correct']) && $_GET['correct'] == '1';
 if ($isCorrectionMode) {
     echo '<div style="padding:1em;background:#ffeaea;color:#a00;border:2px solid #d00;margin-bottom:1em;font-weight:bold;border-radius:8px">
@@ -39,14 +37,7 @@ if ($showPaid) $dateClause = " ";
 // Fetch entries, persons, and products
 // --------------------
 $sql = "
-    SELECT
-      e.date,
-      e.person,
-      e.produkt,
-      SUM(e.anzahl) AS sum,
-      e.bezahlt,
-      p.nachname,
-      p.vorname
+    SELECT e.date, e.person, e.produkt, SUM(e.anzahl) AS sum, e.bezahlt, p.nachname, p.vorname
     FROM db_eintrag AS e
     JOIN db_personen AS p ON e.person = p.person_id
     WHERE bezahlt = $showPaid $dateClause
@@ -82,6 +73,7 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
 }
 ?>
 
+
 <?php foreach ($structuredData as $datum => $persons): ?>
 <h3><?= $showPaid ? 'Bezahlte' : 'Offene' ?> Beträge vom <?= conv_date($datum) ?></h3>
 <table class="styled-table">
@@ -110,11 +102,7 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
                     <?php if ($anzahl > 0): ?><span class="anzahl"><?= $anzahl ?></span><?php endif; ?>
                     <?php if (!$showPaid): ?>
                       <form action="eintrag_speichern.php" method="post" class="cell-click-form" onsubmit="return confirmEintragNeu(this)">
-                          <?php if($isCorrectionMode) {?>
-                            <input type="hidden" name="action" value="korrektur">
-                          <?php } else {?>
-                            <input type="hidden" name="action" value="verkauf">
-                          <?php }?>
+                          <input type="hidden" name="action" value="<?= $isCorrectionMode ? 'korrektur' : 'verkauf' ?>">
                           <input type="hidden" name="Datum" value="<?= $datum ?>">
                           <input type="hidden" name="Produkt_ID" value="<?= $produktId ?>">
                           <input type="hidden" name="Person_ID" value="<?= $personId ?>">
@@ -138,7 +126,7 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
         </tr>
         <?php endforeach; ?>
 
-        <!-- New entry row -->
+        <!-- New entry row: only allows one per product/person at a time. -->
         <?php
         $allPersonIds = array_keys($personById);
         $personenMitEintrag = array_keys($persons);
@@ -157,14 +145,14 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
             </td>
             <?php foreach ($produktById as $produktId => $produkt): ?>
             <td class="col-prod cell-clickable">
-                      <form action="eintrag_speichern.php" method="post" class="cell-click-form" onsubmit="return confirmEintragNeu(this)">
-                          <input type="hidden" name="action" value="verkauf">
-                          <input type="hidden" name="Datum" value="<?= $datum ?>">
-                          <input type="hidden" name="Produkt_ID" value="<?= $produktId ?>">
-                          <input type="hidden" name="Person_ID" value="<?= $personId ?>">
-                          <input type="hidden" name="Menge" value="1">
-                          <input type="hidden" name="Verkaufspreis" value="<?= $produkt['preis'] ?>">
-                      </form>
+                <form action="eintrag_speichern.php" method="post" class="cell-click-form" onsubmit="return confirmEintragNeu(this)">
+                    <input type="hidden" name="action" value="verkauf">
+                    <input type="hidden" name="Datum" value="<?= $datum ?>">
+                    <input type="hidden" name="Produkt_ID" value="<?= $produktId ?>">
+                    <!-- Person_ID gets set by JS from select on submit -->
+                    <input type="hidden" name="Menge" value="1">
+                    <input type="hidden" name="Verkaufspreis" value="<?= $produkt['preis'] ?>">
+                </form>
             </td>
             <?php endforeach; ?>
             <td></td><td></td>
@@ -197,23 +185,16 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
 </div>
 
 <script>
-/* -----------------------------
-   Popup + confirmation logic
-   Click the whole product cell (td.cell-clickable) to open popup.
-   ----------------------------- */
-
-/* These are injected by PHP in your page — keep them as-is */
 const produktNameById = <?= json_encode(array_column($produktById, 'name', 'produkt_id')) ?>;
 const personNameById = <?= json_encode(array_map(fn($p) => $p['vorname'] . ' ' . $p['nachname'], $personById)) ?>;
 window.isCorrectionMode = <?= $isCorrectionMode ? "true" : "false" ?>;
 
-/* ---------- Confirmation helper ---------- */
+// Per-entry confirm dialog
 function confirmEintragNeu(form) {
-  const datum = form.querySelector("input[name='Datum']")?.value || "Unbekannt";
-
-  // prefer hidden Person_ID in the form; if not present try a select in the same row
+  const datum = form.querySelector("input[name='Datum']").value || "Unbekannt";
   let personId = form.querySelector("input[name='Person_ID']")?.value || null;
   if (!personId) {
+    // Try select in new-entry row
     const row = form.closest("tr");
     const sel = row ? row.querySelector("select[name='Person_ID']") : null;
     if (sel) personId = sel.value;
@@ -222,10 +203,7 @@ function confirmEintragNeu(form) {
     alert("Bitte eine Person auswählen.");
     return false;
   }
-  // gather products + quantities
-  const produktDetails = [];
-
-  // single-cell form with input[name='Menge'] and input[name='Produkt_ID']
+  // Must have exactly one product and one quantity
   const mengeInput = form.querySelector("input[name='Menge']");
   const produktIdInput = form.querySelector("input[name='Produkt_ID']");
   if (!mengeInput || !produktIdInput) {
@@ -235,27 +213,26 @@ function confirmEintragNeu(form) {
   const menge = parseInt(mengeInput.value, 10);
   const pid = produktIdInput.value;
   const pname = produktNameById[pid] || "Unbekannt";
-  produktDetails.push(`${pname}: ${menge}`);
-
   const personLabel = personNameById[personId] || "Unbekannt";
-
-  let confirmHead;
-  if (window.isCorrectionMode) {
-    confirmHead = "Eintrag abziehen:";
-  } else {
-    confirmHead = "Eintrag hinzufügen:";
-  }
-
+  const confirmHead = window.isCorrectionMode ? "Eintrag abziehen:" : "Eintrag hinzufügen:";
   const confirmMessage =
     confirmHead + "\n\n" +
     "Person: " + personLabel + "\n" +
     "Datum: " + datum + "\n" +
-    "Produkte und Mengen:\n" + produktDetails.join("\n") + "\n";
-
+    "Produkte und Mengen:\n" + pname + ": " + menge + "\n";
+  // Attach resolved Person_ID to the form if coming from the select
+  let personInput = form.querySelector("input[name='Person_ID']");
+  if (!personInput) {
+    personInput = document.createElement("input");
+    personInput.type = "hidden";
+    personInput.name = "Person_ID";
+    form.appendChild(personInput);
+  }
+  personInput.value = personId;
   return confirm(confirmMessage);
 }
 
-/* ---------- Payment confirm (unchanged) ---------- */
+// Confirm dialog for payment (unchanged)
 function confirmVerkauf(event) {
   event.preventDefault();
   const form = event.target;
@@ -268,92 +245,44 @@ function confirmVerkauf(event) {
   }
 }
 
+// Popup placement: places next to the target cell and fits in the viewport
+function placePopup(popup, rect) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const popupW = popup.offsetWidth || 180;
+  const popupH = popup.offsetHeight || 200;
+  const margin = 8;
+  let left = rect.left + rect.width / 2 - popupW / 2;
+  let top = rect.bottom + 10;
+  if (top + popupH > vh - margin) top = rect.top - popupH - 10;
+  if (top < margin) top = margin;
+  if (left < margin) left = margin;
+  if (left + popupW > vw - margin) left = vw - popupW - margin;
+  popup.style.left = `${left}px`;
+  popup.style.top = `${top}px`;
+}
 
-/* Numeric keypad popup — robust & stable
-   - opens by clicking the table cell (only cells that belong to forms)
-   - stops click propagation so document-level close handlers don't race
-   - supports single-product forms (input[name="Menge"]) and new-entry multi-product forms (menge[ID])
-   - copies current row select[name="Person_ID"] into the form before confirm
-   - smart placement & draggable on mobile
-*/
 document.addEventListener("DOMContentLoaded", () => {
   let activePopup = null;
   let activeCell = null;
 
-  // Helper to close active popup
   function closePopup() {
     if (!activePopup) return;
     activePopup.remove();
+    if (activeCell) activeCell.classList.remove('active-keypad-cell');
     activePopup = null;
     activeCell = null;
   }
 
-  // Smart popup placement inside viewport
-  function placePopup(popup, rect) {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const popupW = popup.offsetWidth || 180;
-    const popupH = popup.offsetHeight || 200;
-    const margin = 8;
-
-    let left = rect.left + rect.width / 2 - popupW / 2;
-    let top = rect.bottom + 10;
-
-    // If popup would overflow bottom -> place above
-    if (top + popupH > vh - margin) top = rect.top - popupH - 10;
-    if (top < margin) top = margin;
-    if (left < margin) left = margin;
-    if (left + popupW > vw - margin) left = vw - popupW - margin;
-
-    popup.style.left = `${left}px`;
-    popup.style.top = `${top}px`;
-  }
-
-  // Make popup draggable (touch + mouse)
-  function makeDraggable(el) {
-    let startX, startY, initLeft, initTop;
-    const onMove = (ev) => {
-      ev.preventDefault();
-      const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
-      const y = ev.touches ? ev.touches[0].clientY : ev.clientY;
-      el.style.left = `${initLeft + (x - startX)}px`;
-      el.style.top = `${initTop + (y - startY)}px`;
-    };
-    const onEnd = () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("touchmove", onMove);
-    };
-    const onStart = (ev) => {
-      const x = ev.touches ? ev.touches[0].clientX : ev.clientX;
-      const y = ev.touches ? ev.touches[0].clientY : ev.clientY;
-      const rect = el.getBoundingClientRect();
-      startX = x; startY = y;
-      initLeft = rect.left; initTop = rect.top;
-      document.addEventListener("mousemove", onMove);
-      document.addEventListener("touchmove", onMove, { passive: false });
-      document.addEventListener("mouseup", onEnd, { once: true });
-      document.addEventListener("touchend", onEnd, { once: true });
-    };
-    el.addEventListener("mousedown", onStart);
-    el.addEventListener("touchstart", onStart, { passive: false });
-  }
-
-  // Open popup when clicking inside the table
   const table = document.querySelector(".styled-table");
   const clickContainer = table || document.body;
 
-  clickContainer.addEventListener("click", function tableClickHandler(e) {
+  clickContainer.addEventListener("click", function(e) {
     if (e.target.closest("select, input, button, a, label, textarea")) return;
-
     const td = e.target.closest("td");
     if (!td) return;
-
-    let form = td.querySelector("form") || td.closest("tr")?.querySelector("form");
+    let form = td.querySelector("form");
     if (!form) return;
-
-    const acceptsSingle = !!form.querySelector("input[name='Menge']");
-    const acceptsArray  = !!form.querySelector("input[name^='menge']") || td.dataset.newentry === "true" || td.closest("tr")?.classList.contains("new-entry-row");
-    if (!acceptsSingle && !acceptsArray) return;
 
     e.stopPropagation();
     e.preventDefault();
@@ -364,66 +293,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     closePopup();
 
-    // Create popup
+    td.classList.add('active-keypad-cell');
+    activeCell = td;
+
     const popup = document.createElement("div");
     popup.className = "qty-inline-popup";
-    if (window.isCorrectionMode) {
-      popup.innerHTML = `
-        <div class="qty-display" aria-live="polite">0</div>
-        <div class="qty-grid" role="grid">
-          ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" class="num-btn" data-num="${n}">${n}</button>`).join('')}
-          <button type="button" class="num-btn" data-action="clear">C</button>
-          <button type="button" class="num-btn" data-num="0">0</button>
-          <button type="button" class="num-btn" data-action="ok">-</button>
-        </div>
-      `;
-    } else {
-      popup.innerHTML = `
-        <div class="qty-display" aria-live="polite">0</div>
-        <div class="qty-grid" role="grid">
-          ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" class="num-btn" data-num="${n}">${n}</button>`).join('')}
-          <button type="button" class="num-btn" data-action="clear">C</button>
-          <button type="button" class="num-btn" data-num="0">0</button>
-          <button type="button" class="num-btn" data-action="ok">+</button>
-        </div>
-      `;
-    }
-
+    popup.innerHTML = `
+      <div class="qty-display" aria-live="polite">0</div>
+      <div class="qty-grid" role="grid">
+        ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" class="num-btn" data-num="${n}">${n}</button>`).join('')}
+        <button type="button" class="num-btn" data-action="clear">C</button>
+        <button type="button" class="num-btn" data-num="0">0</button>
+        <button type="button" class="num-btn" data-action="ok">${window.isCorrectionMode ? '-' : '+'}</button>
+      </div>
+    `;
     document.body.appendChild(popup);
 
     popup.style.position = "fixed";
     popup.style.zIndex = 9999;
 
+    // POPUP PLACEMENT
     placePopup(popup, td.getBoundingClientRect());
-    makeDraggable(popup);
 
     activePopup = popup;
-    activeCell = td;
 
     popup.addEventListener("click", (ev) => ev.stopPropagation());
 
-    if (!form.querySelector("input[name='Menge']")) {
-      const hidden = document.createElement("input");
-      hidden.type = "hidden";
-      hidden.name = "Menge";
-      hidden.value = "";
-      form.appendChild(hidden);
+    let mengeField = form.querySelector("input[name='Menge']");
+    if (!mengeField) {
+      mengeField = document.createElement("input");
+      mengeField.type = "hidden";
+      mengeField.name = "Menge";
+      mengeField.value = "";
+      form.appendChild(mengeField);
     }
-
-    // Copy row's select[name='Person_ID'] if present
-    const row = td.closest("tr");
-    const selectPerson = row ? row.querySelector("select[name='Person_ID']") : null;
-    if (selectPerson) {
-      let personInput = form.querySelector("input[name='Person_ID']");
-      if (!personInput) {
-        personInput = document.createElement("input");
-        personInput.type = "hidden";
-        personInput.name = "Person_ID";
-        form.appendChild(personInput);
-      }
-      personInput.value = selectPerson.value;
-    }
-
     const display = popup.querySelector(".qty-display");
 
     popup.addEventListener("click", (ev) => {
@@ -442,132 +345,86 @@ document.addEventListener("DOMContentLoaded", () => {
           closePopup();
           return;
         }
-
-        const produktId = td.dataset.produkt || td.getAttribute("data-produkt") || null;
-        const isNewEntryRow = !!td.dataset.newentry || !!td.closest("tr")?.classList.contains("new-entry-row");
-        const existingArrayField = produktId ? form.querySelector(`input[name="menge[${produktId}]"]`) : null;
-
-        if (existingArrayField) {
-          existingArrayField.value = qty;
-        } else if (isNewEntryRow && produktId) {
-          let mf = form.querySelector(`input[name="menge[${produktId}]"]`);
-          if (!mf) {
-            mf = document.createElement("input");
-            mf.type = "hidden";
-            mf.name = `menge[${produktId}]`;
-            form.appendChild(mf);
-          }
-          mf.value = qty;
-        } else {
-          const mengeField = form.querySelector("input[name='Menge']");
-          if (mengeField) mengeField.value = qty;
-          else {
-            const mf = document.createElement("input");
-            mf.type = "hidden";
-            mf.name = "Menge";
-            mf.value = qty;
-            form.appendChild(mf);
-          }
+        mengeField.value = qty;
+        if (!confirmEintragNeu(form)) {
+          closePopup();
+          return;
         }
-
-        if (typeof confirmEintragNeu === "function") {
-          if (!confirmEintragNeu(form)) {
-            closePopup();
-            return;
-          }
-        }
-
         closePopup();
         form.submit();
       }
     });
   });
 
-  // Close popup on outside click
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", () => {
     if (!activePopup) return;
     closePopup();
   });
 });
 
-// ----------------------
-// Neue Person hinzufügen (Green Plus Button)
-// ----------------------
+// Add Person popup, unchanged
 document.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.getElementById("addPersonBtn");
   const popup = document.getElementById("addPersonPopup");
   const confirmBtn = document.getElementById("confirmAddPerson");
   const cancelBtn = document.getElementById("cancelAddPerson");
-
   const vornameInput = document.getElementById("vornameInput");
   const nachnameInput = document.getElementById("nachnameInput");
 
-  // Show popup
   addBtn.addEventListener("click", () => {
     popup.style.display = "flex";
     vornameInput.focus();
   });
 
-  // Cancel popup
   cancelBtn.addEventListener("click", () => {
     popup.style.display = "none";
     vornameInput.value = "";
     nachnameInput.value = "";
   });
 
-  // Confirm and save new person
   confirmBtn.addEventListener("click", () => {
-  const vor = vornameInput.value.trim();
-  const nach = nachnameInput.value.trim();
-  if (!vor || !nach) {
-    alert("Bitte Vorname und Nachname eingeben.");
-    return;
-  }
-
-  fetch("neue_person_eintragen.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `vorname=${encodeURIComponent(vor)}&nachname=${encodeURIComponent(nach)}`
-  })
-  .then(resp => resp.json())
-  .then(data => {
-    if (data.success && data.person_id) {
-
-      // 🔹 Find the new-entry select
-      const select = document.querySelector(
-        ".new-entry-row select[name='Person_ID']"
-      );
-
-      if (select) {
-        // 🔹 Create and insert new option
-        const opt = document.createElement("option");
-        opt.value = data.person_id;
-        opt.textContent = `${vor} ${nach}`;
-        opt.selected = true;
-
-        select.appendChild(opt);
-      }
-
-      // 🔹 Close popup & reset inputs
-      popup.style.display = "none";
-      vornameInput.value = "";
-      nachnameInput.value = "";
-
-    } else {
-      alert("Fehler beim Hinzufügen der Person.");
+    const vor = vornameInput.value.trim();
+    const nach = nachnameInput.value.trim();
+    if (!vor || !nach) {
+      alert("Bitte Vorname und Nachname eingeben.");
+      return;
     }
-  })
-  .catch(err => {
-    console.error("Fehler:", err);
-    alert("Netzwerkfehler.");
+
+    fetch("neue_person_eintragen.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `vorname=${encodeURIComponent(vor)}&nachname=${encodeURIComponent(nach)}`
+    })
+    .then(resp => resp.json())
+    .then(data => {
+      if (data.success && data.person_id) {
+        const select = document.querySelector(
+          ".new-entry-row select[name='Person_ID']"
+        );
+        if (select) {
+          const opt = document.createElement("option");
+          opt.value = data.person_id;
+          opt.textContent = `${vor} ${nach}`;
+          opt.selected = true;
+          select.appendChild(opt);
+        }
+        popup.style.display = "none";
+        vornameInput.value = "";
+        nachnameInput.value = "";
+      } else {
+        alert("Fehler beim Hinzufügen der Person.");
+      }
+    })
+    .catch(err => {
+      console.error("Fehler:", err);
+      alert("Netzwerkfehler.");
+    });
   });
-});
 
-
-  // Close popup on outside click
   popup.addEventListener("click", e => {
     if (e.target === popup) cancelBtn.click();
   });
 });
 </script>
 <?php include("./includes/footer.php"); ?>
+
