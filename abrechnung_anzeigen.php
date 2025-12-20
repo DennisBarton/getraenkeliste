@@ -205,6 +205,7 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
 /* These are injected by PHP in your page — keep them as-is */
 const produktNameById = <?= json_encode(array_column($produktById, 'name', 'produkt_id')) ?>;
 const personNameById = <?= json_encode(array_map(fn($p) => $p['vorname'] . ' ' . $p['nachname'], $personById)) ?>;
+window.isCorrectionMode = <?= $isCorrectionMode ? "true" : "false" ?>;
 
 /* ---------- Confirmation helper ---------- */
 function confirmEintragNeu(form) {
@@ -237,8 +238,16 @@ function confirmEintragNeu(form) {
   produktDetails.push(`${pname}: ${menge}`);
 
   const personLabel = personNameById[personId] || "Unbekannt";
+
+  let confirmHead;
+  if (window.isCorrectionMode) {
+    confirmHead = "Eintrag abziehen:";
+  } else {
+    confirmHead = "Eintrag hinzufügen:";
+  }
+
   const confirmMessage =
-    "Eintrag hinzufügen:\n\n" +
+    confirmHead + "\n\n" +
     "Person: " + personLabel + "\n" +
     "Datum: " + datum + "\n" +
     "Produkte und Mengen:\n" + produktDetails.join("\n") + "\n";
@@ -358,15 +367,28 @@ document.addEventListener("DOMContentLoaded", () => {
     // Create popup
     const popup = document.createElement("div");
     popup.className = "qty-inline-popup";
-    popup.innerHTML = `
-      <div class="qty-display" aria-live="polite">0</div>
-      <div class="qty-grid" role="grid">
-        ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" class="num-btn" data-num="${n}">${n}</button>`).join('')}
-        <button type="button" class="num-btn" data-action="clear">C</button>
-        <button type="button" class="num-btn" data-num="0">0</button>
-        <button type="button" class="num-btn" data-action="ok">+</button>
-      </div>
-    `;
+    if (window.isCorrectionMode) {
+      popup.innerHTML = `
+        <div class="qty-display" aria-live="polite">0</div>
+        <div class="qty-grid" role="grid">
+          ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" class="num-btn" data-num="${n}">${n}</button>`).join('')}
+          <button type="button" class="num-btn" data-action="clear">C</button>
+          <button type="button" class="num-btn" data-num="0">0</button>
+          <button type="button" class="num-btn" data-action="ok">-</button>
+        </div>
+      `;
+    } else {
+      popup.innerHTML = `
+        <div class="qty-display" aria-live="polite">0</div>
+        <div class="qty-grid" role="grid">
+          ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" class="num-btn" data-num="${n}">${n}</button>`).join('')}
+          <button type="button" class="num-btn" data-action="clear">C</button>
+          <button type="button" class="num-btn" data-num="0">0</button>
+          <button type="button" class="num-btn" data-action="ok">+</button>
+        </div>
+      `;
+    }
+
     document.body.appendChild(popup);
 
     popup.style.position = "fixed";
