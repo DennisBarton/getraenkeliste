@@ -427,7 +427,10 @@ document.addEventListener("DOMContentLoaded", () => {
         display.textContent = "0";
       } else if (action === "ok") {
         let qty = parseInt(display.textContent, 10);
-        if (isNaN(qty) || qty <= 0) qty = 1;
+        if (isNaN(qty) || qty <= 0) {
+          closePopup();
+          return;
+        }
 
         const produktId = td.dataset.produkt || td.getAttribute("data-produkt") || null;
         const isNewEntryRow = !!td.dataset.newentry || !!td.closest("tr")?.classList.contains("new-entry-row");
@@ -503,32 +506,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Confirm and save new person
   confirmBtn.addEventListener("click", () => {
-    const vor = vornameInput.value.trim();
-    const nach = nachnameInput.value.trim();
-    if (!vor || !nach) {
-      alert("Bitte Vorname und Nachname eingeben.");
-      return;
-    }
+  const vor = vornameInput.value.trim();
+  const nach = nachnameInput.value.trim();
+  if (!vor || !nach) {
+    alert("Bitte Vorname und Nachname eingeben.");
+    return;
+  }
 
-    fetch("neue_person_eintragen.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `vorname=${encodeURIComponent(vor)}&nachname=${encodeURIComponent(nach)}`
-    })
-    .then(resp => resp.json())
-    .then(data => {
-      if (data.success && data.person_id) {
-        alert(`Neue Person hinzugefügt: ${vor} ${nach}`);
-        location.reload(); // reloads to update selector
-      } else {
-        alert("Fehler beim Hinzufügen der Person.");
+  fetch("neue_person_eintragen.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `vorname=${encodeURIComponent(vor)}&nachname=${encodeURIComponent(nach)}`
+  })
+  .then(resp => resp.json())
+  .then(data => {
+    if (data.success && data.person_id) {
+
+      // 🔹 Find the new-entry select
+      const select = document.querySelector(
+        ".new-entry-row select[name='Person_ID']"
+      );
+
+      if (select) {
+        // 🔹 Create and insert new option
+        const opt = document.createElement("option");
+        opt.value = data.person_id;
+        opt.textContent = `${vor} ${nach}`;
+        opt.selected = true;
+
+        select.appendChild(opt);
       }
-    })
-    .catch(err => {
-      console.error("Fehler:", err);
-      alert("Netzwerkfehler.");
-    });
+
+      // 🔹 Close popup & reset inputs
+      popup.style.display = "none";
+      vornameInput.value = "";
+      nachnameInput.value = "";
+
+    } else {
+      alert("Fehler beim Hinzufügen der Person.");
+    }
+  })
+  .catch(err => {
+    console.error("Fehler:", err);
+    alert("Netzwerkfehler.");
   });
+});
+
 
   // Close popup on outside click
   popup.addEventListener("click", e => {
