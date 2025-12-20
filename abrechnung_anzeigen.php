@@ -4,8 +4,19 @@
 // Generates overview of open/paid amounts with popup quantity entry
 // ============================================================
 
+
+
 $site_name = "Abrechnung";
 include("./includes/header.php");
+
+// Add this block before the rest
+$isCorrectionMode = isset($_GET['correct']) && $_GET['correct'] == '1';
+if ($isCorrectionMode) {
+    echo '<div style="padding:1em;background:#ffeaea;color:#a00;border:2px solid #d00;margin-bottom:1em;font-weight:bold;border-radius:8px">
+        <span style="font-size:1.5em">&#9888;&#65039;</span> Achtung: <strong>Korrekturmodus</strong> aktiv!
+        Änderungen werden direkt übernommen.
+    </div>';
+}
 
 // --------------------
 // Date filter setup
@@ -99,7 +110,11 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
                     <?php if ($anzahl > 0): ?><span class="anzahl"><?= $anzahl ?></span><?php endif; ?>
                     <?php if (!$showPaid): ?>
                       <form action="eintrag_speichern.php" method="post" class="cell-click-form" onsubmit="return confirmEintragNeu(this)">
-                          <input type="hidden" name="action" value="verkauf">
+                          <?php if($isCorrectionMode) {?>
+                            <input type="hidden" name="action" value="korrektur">
+                          <?php } else {?>
+                            <input type="hidden" name="action" value="verkauf">
+                          <?php }?>
                           <input type="hidden" name="Datum" value="<?= $datum ?>">
                           <input type="hidden" name="Produkt_ID" value="<?= $produktId ?>">
                           <input type="hidden" name="Person_ID" value="<?= $personId ?>">
@@ -206,46 +221,20 @@ function confirmEintragNeu(form) {
     alert("Bitte eine Person auswählen.");
     return false;
   }
-
   // gather products + quantities
   const produktDetails = [];
 
-  // case 1: forms using multiple menge[...] fields (rare here)
-  const mengeInputs = form.querySelectorAll("input[name^='menge']");
-  if (mengeInputs.length > 0) {
-    mengeInputs.forEach(input => {
-      const menge = parseInt(input.value, 10);
-      if (menge > 0) {
-        const m = input.name.match(/\[(\d+)\]/);
-        if (m) {
-          const pid = m[1];
-          const pname = produktNameById[pid] || "Unbekannt";
-          produktDetails.push(`${pname}: ${menge}`);
-        }
-      }
-    });
-  } else {
-    // case 2: single-cell form with input[name='Menge'] and input[name='Produkt_ID']
-    const mengeInput = form.querySelector("input[name='Menge']");
-    const produktIdInput = form.querySelector("input[name='Produkt_ID']");
-    if (!mengeInput || !produktIdInput) {
-      alert("Produkt oder Menge fehlt.");
-      return false;
-    }
-    const menge = parseInt(mengeInput.value, 10);
-    if (isNaN(menge) || menge <= 0) {
-      alert("Bitte eine Menge größer als 0 eingeben.");
-      return false;
-    }
-    const pid = produktIdInput.value;
-    const pname = produktNameById[pid] || "Unbekannt";
-    produktDetails.push(`${pname}: ${menge}`);
-  }
-
-  if (produktDetails.length === 0) {
-    alert("Bitte mindestens eine Menge größer als 0 eingeben.");
+  // single-cell form with input[name='Menge'] and input[name='Produkt_ID']
+  const mengeInput = form.querySelector("input[name='Menge']");
+  const produktIdInput = form.querySelector("input[name='Produkt_ID']");
+  if (!mengeInput || !produktIdInput) {
+    alert("Produkt oder Menge fehlt.");
     return false;
   }
+  const menge = parseInt(mengeInput.value, 10);
+  const pid = produktIdInput.value;
+  const pname = produktNameById[pid] || "Unbekannt";
+  produktDetails.push(`${pname}: ${menge}`);
 
   const personLabel = personNameById[personId] || "Unbekannt";
   const confirmMessage =

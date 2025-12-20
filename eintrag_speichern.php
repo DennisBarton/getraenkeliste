@@ -24,29 +24,19 @@ if ($personId === "__new__") {
 try {
     $pdo->beginTransaction();
 
-    if ($action === "verkauf") {
+    if ($action === "verkauf" || $action === "korrektur") {
         // ========================
         // 💰 HANDLE VERKAUF (NEW SALE)
         // ========================
+        if ($action === "verkauf") $mathop = "+";
+        if ($action === "korrektur") $mathop = "-";
         $stmt = $pdo->prepare("
             INSERT INTO db_eintrag (person, date, produkt, anzahl, bezahlt)
             VALUES (:person, :date, :produkt, :anzahl, 0)
-            ON DUPLICATE KEY UPDATE anzahl = anzahl + VALUES(anzahl)
+            ON DUPLICATE KEY UPDATE anzahl = anzahl ".$mathop." VALUES(anzahl)
         ");
 
-        if (isset($_POST['menge']) && is_array($_POST['menge'])) {
-            foreach ($_POST['menge'] as $produktId => $anzahl) {
-                $anzahl = (int)$anzahl;
-                if ($anzahl > 0) {
-                    $stmt->execute([
-                        'person' => $personId,
-                        'date' => $date,
-                        'produkt' => $produktId,
-                        'anzahl' => $anzahl
-                    ]);
-                }
-            }
-        } elseif (isset($_POST['Produkt_ID'], $_POST['Menge'])) {
+        if (isset($_POST['Produkt_ID'], $_POST['Menge'])) {
             $produktId = (int)$_POST['Produkt_ID'];
             $anzahl = (int)$_POST['Menge'];
             if ($anzahl > 0) {
