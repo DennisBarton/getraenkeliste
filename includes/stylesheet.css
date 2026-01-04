@@ -121,8 +121,9 @@ footer {
 
 .styled-table td.name-cell {
   text-align: left;
-  min-width: 140px;
+  min-width: 120px;
   font-weight: 500;
+  padding-left: 30px;
 }
 
 /* ----- New Entry Row ----- */

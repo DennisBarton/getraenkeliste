@@ -92,7 +92,7 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
         <?php foreach ($persons as $personId => $personData): ?>
         <?php $betrag = 0; ?>
         <tr>
-            <td class="col-name">
+            <td class="name-cell">
                 <?= htmlspecialchars($personById[$personId]['nachname']) ?>, 
                 <?= htmlspecialchars($personById[$personId]['vorname']) ?>
             </td>
