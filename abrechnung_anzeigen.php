@@ -196,7 +196,7 @@ if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[
   };
 </script>
 
-<script src="js/keypad.js" defer></script>
+<script type ="module" src="js/app.js"></script>
 
 
 <?php include("./includes/footer.php"); ?>
