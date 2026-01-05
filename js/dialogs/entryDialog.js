@@ -53,25 +53,29 @@ function buildEntryConfirmText(data, appData) {
     ? "Eintrag abziehen:"
     : "Eintrag hinzufügen:";
 
-  return (
-    `${head}\n\n` +
-    `Datum: ${data.datum}\n` +
-    `Person: ${personNameById[data.personId] || "Unbekannt"}\n` +
-    `${data.menge} ${produktNameById[data.produktId] || "Unbekannt"}`
-  );
+  const message = 
+    head + "\n\n" +
+    data.datum + "\n" +
+    personNameById[data.personId] + "\n" +
+    data.menge + " " + produktNameById[data.produktId];
+
+  return (message);
 }
 
-export function confirmEntryDialog(form, appData) {
+import { showAlert, showConfirm } from "./modal.js";
+
+export async function confirmEntryDialog(form, appData) {
   const data = extractEntryData(form);
   const error = validateEntryData(data);
 
   if (error) {
-    alert(error);
+    await showAlert(error);
     return false;
   }
 
   ensurePersonInput(form, data.personId);
 
-  return confirm(buildEntryConfirmText(data, appData));
+  const text = buildEntryConfirmText(data, appData);
+  return await showConfirm(text, "");
 }
 

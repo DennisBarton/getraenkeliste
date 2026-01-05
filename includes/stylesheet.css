@@ -519,3 +519,51 @@ td.cell-clickable:hover {
     z-index: -1;
   }
 }
+.modal.hidden { display: none; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.4);
+}
+
+.modal-box {
+  position: relative;
+  margin: 10vh auto;
+  background: white;
+  max-width: 300px;
+  padding: 1rem;
+  padding-left: 3rem;
+  padding-right: 3rem;
+  border-radius: 6px;
+}
+.modal-content {
+  white-space: pre-line;
+}
+
+.modal-btn-ok {
+  background-color: cadetblue;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.6em;
+  font-weight: bold;
+  padding: 10px;
+  cursor: pointer;
+  margin-right: 20px;
+}
+.modal-btn-cncl {
+  background-color: #d9534f;
+  color: #fff;
+  font-size: 1.6em;
+  font-weight: bold;
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+}

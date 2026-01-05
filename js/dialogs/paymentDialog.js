@@ -12,20 +12,25 @@ function extractPaymentData(form) {
 
 function buildPaymentConfirmText({ name, date, amount }) {
   return (
-    `Wollen Sie diesen Eintrag bezahlen:\n\n` +
-    `Name:\t${name}\n` +
-    `Datum:\t${date}\n` +
-    `Betrag:\t${amount}`
+    `${name}\n` +
+    `${date}\n` +
+    `${amount}`
   );
 }
 
-export function confirmPaymentDialog(event) {
+import { showConfirm } from "./modal.js";
+
+export async function confirmPaymentDialog(event) {
   event.preventDefault();
 
   const form = event.target;
   const data = extractPaymentData(form);
 
-  if (confirm(buildPaymentConfirmText(data))) {
-    form.submit();
-  }
+  const ok = await showConfirm(
+    buildPaymentConfirmText(data),
+    "Zahlung bestätigen"
+  );
+
+  if (ok) form.submit();
 }
+

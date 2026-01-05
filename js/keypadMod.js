@@ -5,7 +5,6 @@ export function initQuantityKeypad({
   confirmEintragNeu
 }) {
 
-// Popup placement: places next to the target cell and fits in the viewport
 function placePopup(popup, rect) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -41,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.closest("select, input, button, a, label, textarea")) return;
     const td = e.target.closest("td");
     if (!td) return;
-    let form = td.querySelector("form");
+    const form = td.querySelector("form");
     if (!form) return;
 
     e.stopPropagation();
@@ -60,25 +59,26 @@ document.addEventListener("DOMContentLoaded", () => {
       form.querySelector("input[name='Person_ID']")?.value ||
       form.closest("tr")?.querySelector("select[name='Person_ID']")?.value;
 
-    const produktId = form.querySelector("input[name='Produkt_ID']")?.value;
-
-    const personName = personNameById[personId] || "Unbekannte Person";
-    const produktName = produktNameById[produktId] || "Unbekanntes Produkt";
-
+    const produktId =
+      form.querySelector("input[name='Produkt_ID']")?.value;
 
     const popup = document.createElement("div");
     popup.className = "qty-inline-popup";
     popup.innerHTML = `
       <div class="keypad-info">
-        <div><strong>${personName}</strong></div>
-        <div><strong>${produktName}</strong></div>
+        <div><strong>${personNameById[personId] || "Unbekannte Person"}</strong></div>
+        <div><strong>${produktNameById[produktId] || "Unbekanntes Produkt"}</strong></div>
       </div>
       <div class="qty-display" aria-live="polite">0</div>
       <div class="qty-grid" role="grid">
-        ${[1,2,3,4,5,6,7,8,9].map(n => `<button type="button" class="num-btn" data-num="${n}">${n}</button>`).join('')}
+        ${[1,2,3,4,5,6,7,8,9].map(n =>
+          `<button type="button" class="num-btn" data-num="${n}">${n}</button>`
+        ).join("")}
         <button type="button" class="num-btn" data-action="clear">C</button>
         <button type="button" class="num-btn" data-num="0">0</button>
-        <button type="button" class="num-btn" data-action="ok">${window.APP_DATA.isCorrectionMode ? '-' : '+'}</button>
+        <button type="button" class="num-btn" data-action="ok">
+          ${isCorrectionMode ? "-" : "+"}
+        </button>
       </div>
     `;
     document.body.appendChild(popup);
@@ -86,53 +86,54 @@ document.addEventListener("DOMContentLoaded", () => {
     popup.style.position = "fixed";
     popup.style.zIndex = 9999;
 
-    // POPUP PLACEMENT
     placePopup(popup, td.getBoundingClientRect());
-
     activePopup = popup;
 
-    popup.addEventListener("click", (ev) => ev.stopPropagation());
+    popup.addEventListener("click", ev => ev.stopPropagation());
 
     let mengeField = form.querySelector("input[name='Menge']");
     if (!mengeField) {
       mengeField = document.createElement("input");
       mengeField.type = "hidden";
       mengeField.name = "Menge";
-      mengeField.value = "";
       form.appendChild(mengeField);
     }
+
     const display = popup.querySelector(".qty-display");
 
-    popup.addEventListener("click", (ev) => {
+    // 🔑 THIS is the important change
+    popup.addEventListener("click", async (ev) => {
       const btn = ev.target.closest(".num-btn");
       if (!btn) return;
-      const num = btn.dataset.num;
-      const action = btn.dataset.action;
 
-      if (num !== undefined) {
-        display.textContent = display.textContent === "0" ? num : display.textContent + num;
-      } else if (action === "clear") {
+      if (btn.dataset.num !== undefined) {
+        display.textContent =
+          display.textContent === "0"
+            ? btn.dataset.num
+            : display.textContent + btn.dataset.num;
+
+      } else if (btn.dataset.action === "clear") {
         display.textContent = "0";
-      } else if (action === "ok") {
-        let qty = parseInt(display.textContent, 10);
-        if (isNaN(qty) || qty <= 0) {
+
+      } else if (btn.dataset.action === "ok") {
+        const qty = parseInt(display.textContent, 10);
+        if (!qty) {
           closePopup();
           return;
         }
+
         mengeField.value = qty;
-        if (!confirmEintragNeu(form)) {
-          closePopup();
-          return;
-        }
+
+        const confirmed = await confirmEintragNeu(form);
         closePopup();
-        form.submit();
+
+        if (confirmed) {
+          form.submit();
+        }
       }
     });
   });
 
-  document.addEventListener("click", () => {
-    if (!activePopup) return;
-    closePopup();
-  });
+  document.addEventListener("click", closePopup);
 });
 }

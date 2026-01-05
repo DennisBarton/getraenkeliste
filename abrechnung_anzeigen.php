@@ -138,6 +138,20 @@ $today = $data['today'];
   </div>
 </div>
 
+<!------- Modal for confirmation  ------->
+<div id="app-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <h2 class="modal-title"></h2>
+    <h2 class="modal-content"></h2>
+    <div class="modal-actions">
+      <button class="modal-btn-ok" type="button" data-action="ok">OK</button>
+      <button class="modal-btn-cncl" type="button" data-action="cancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+
 <script>
   window.APP_DATA = {
     produktNameById: <?= json_encode(array_column($produktById, 'name', 'produkt_id')) ?>,
