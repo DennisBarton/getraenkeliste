@@ -1,9 +1,4 @@
 <?php
-// ============================================================
-// Abrechnung Anzeigen - Cleaned Version (Single-value submissions only)
-// Popup is placed next to the clicked cell and cell is highlighted
-// ============================================================
-
 $site_name = "Abrechnung";
 include("./includes/header.php");
 
@@ -17,61 +12,19 @@ if ($isCorrectionMode) {
 }
 
 // --------------------
-// Date filter setup
+// Get data
 // --------------------
-$today = get_today();
-$dateClause = " ";
-if (isset($_GET["date"])) {
-    if ($_GET["date"] === 'today') {
-        $date = $today;
-        $dateClause = " AND date='$date' ";
-    }
-} else {
-    $date = $today;
-    $dateClause = " AND NOT date='$date' ";
-}
+require_once __DIR__ . '/dataProvider.php';
+
 $showPaid = isset($_GET['paid']) && $_GET['paid'] == 1 ? 1 : 0;
-if ($showPaid) $dateClause = " ";
+$dateFilter = $_GET['date'] ?? null;
 
-// --------------------
-// Fetch entries, persons, and products
-// --------------------
-$sql = "
-    SELECT e.date, e.person, e.produkt, SUM(e.anzahl) AS sum, e.bezahlt, p.nachname, p.vorname
-    FROM db_eintrag AS e
-    JOIN db_personen AS p ON e.person = p.person_id
-    WHERE bezahlt = $showPaid $dateClause
-    GROUP BY e.date, e.person, e.produkt
-    ORDER BY e.date DESC, p.nachname ASC, p.vorname ASC;
+$data = getAbrechnungData($pdo, $showPaid, $dateFilter);
 
-    SELECT person_id, nachname, vorname FROM db_personen
-    ORDER BY nachname ASC, vorname ASC;
-
-    SELECT produkt_id, name, preis FROM db_produkte_standard;
-";
-$data_query = $pdo->query($sql);
-$data = [];
-do {
-    $data[] = $data_query->fetchAll(PDO::FETCH_ASSOC);
-} while ($data_query->nextRowset());
-
-$personById  = array_column($data[1], null, 'person_id');
-$produktById = array_column($data[2], null, 'produkt_id');
-
-// --------------------
-// Structure entries by date and person
-// --------------------
-$structuredData = [];
-foreach ($data[0] as $row) {
-    $date = $row['date'];
-    $person = $row['person'];
-    $produkt = $row['produkt'];
-    $structuredData[$date][$person]['produkte'][$produkt] = $row['sum'];
-    $structuredData[$date][$person]['bezahlt'] = $row['bezahlt'];
-}
-if (isset($_GET['date']) && $_GET['date'] === 'today' && !isset($structuredData[$today])) {
-    $structuredData[$today] = [];
-}
+$structuredData = $data['structuredData'];
+$personById = $data['personById'];
+$produktById = $data['produktById'];
+$today = $data['today'];
 ?>
 
 

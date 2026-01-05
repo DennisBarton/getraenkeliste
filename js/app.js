@@ -1,6 +1,5 @@
 // app.js
 import { initQuantityKeypad } from "./keypadMod.js";
-//import { confirmEintragNeu, confirmVerkauf } from "./dialogs.js";
 import { confirmEntryDialog } from "./dialogs/entryDialog.js";
 import { confirmPaymentDialog } from "./dialogs/paymentDialog.js";
 import { initAddPersonPopup } from "./addPersonPopup.js";
