@@ -1,36 +1,26 @@
 // dialogs/paymentDialog.js
+import { runDialog } from "./runDialog.js";
 
-function extractPaymentData(form) {
-  const row = form.closest("tr");
-
-  return {
-    name: row.cells[0].textContent.trim(),
-    date: form.querySelector("input[name='date']")?.value || "",
-    amount: row.cells[row.cells.length - 2].textContent.trim()
-  };
-}
-
-function buildPaymentConfirmText({ name, date, amount }) {
-  return (
-    `${name}\n` +
-    `${date}\n` +
-    `${amount}`
-  );
-}
-
-import { showConfirm } from "./modal.js";
-
-export async function confirmPaymentDialog(event) {
+export function confirmPaymentDialog(event) {
   event.preventDefault();
-
   const form = event.target;
-  const data = extractPaymentData(form);
 
-  const ok = await showConfirm(
-    buildPaymentConfirmText(data),
-    "Zahlung bestätigen"
-  );
+  return runDialog({
+    collect: () => {
+      const row = form.closest("tr");
+      return {
+        name: row.cells[0].textContent.trim(),
+        date: form.querySelector("[name='date']")?.value || "",
+        amount: row.cells[row.cells.length - 2].textContent.trim()
+      };
+    },
 
-  if (ok) form.submit();
+    render: d =>
+      `${d.name}\n${d.date}\n${d.amount}`,
+
+    title: "Zahlung bestätigen",
+
+    onConfirm: () => form.submit()
+  });
 }
 

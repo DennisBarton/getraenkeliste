@@ -1,81 +1,56 @@
 // dialogs/entryDialog.js
+import { runDialog } from "./runDialog.js";
+import { extractFormValues } from "./formUtils.js";
 
-function extractEntryData(form) {
-  const datum =
-    form.querySelector("input[name='Datum']")?.value || "Unbekannt";
+export function confirmEntryDialog(form, appData) {
+  return runDialog({
+    collect: () => {
+      const row = form.closest("tr");
 
-  const personId =
-    form.querySelector("input[name='Person_ID']")?.value ||
-    form.closest("tr")
-      ?.querySelector("select[name='Person_ID']")
-      ?.value ||
-    null;
+      return {
+        ...extractFormValues(form, ["Datum", "Person_ID", "Produkt_ID", "Menge"]),
+        personId:
+          form.querySelector("[name='Person_ID']")?.value ??
+          row?.querySelector("select[name='Person_ID']")?.value ??
+          null
+      };
+    },
 
-  const produktId =
-    form.querySelector("input[name='Produkt_ID']")?.value || null;
+    normalize: d => ({
+      ...d,
+      menge: parseInt(d.Menge, 10),
+      datum: d.Datum || "Unbekannt"
+    }),
 
-  const menge = parseInt(
-    form.querySelector("input[name='Menge']")?.value,
-    10
-  );
+    validate: d => {
+      if (!d.personId) return "Bitte eine Person auswählen.";
+      if (!d.Produkt_ID) return "Produkt fehlt.";
+      if (!Number.isInteger(d.menge) || d.menge <= 0)
+        return "Ungültige Menge.";
+    },
 
-  return { datum, personId, produktId, menge };
+    render: d => {
+      const head = appData.isCorrectionMode
+        ? "Eintrag abziehen:"
+        : "Eintrag hinzufügen:";
+
+      return (
+        `${head}\n\n` +
+        `${d.datum}\n` +
+        `${appData.personNameById[d.personId]}\n` +
+        `${d.menge} ${appData.produktNameById[d.Produkt_ID]}`
+      );
+    },
+
+    onConfirm: d => {
+      let input = form.querySelector("input[name='Person_ID']");
+      if (!input) {
+        input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "Person_ID";
+        form.appendChild(input);
+      }
+      input.value = d.personId;
+    }
+  });
 }
-
-function validateEntryData(data) {
-  if (!data.personId) {
-    return "Bitte eine Person auswählen.";
-  }
-  if (!data.produktId) {
-    return "Produkt fehlt.";
-  }
-  if (!Number.isInteger(data.menge) || data.menge <= 0) {
-    return "Ungültige Menge.";
-  }
-  return null;
-}
-
-function ensurePersonInput(form, personId) {
-  let input = form.querySelector("input[name='Person_ID']");
-  if (!input) {
-    input = document.createElement("input");
-    input.type = "hidden";
-    input.name = "Person_ID";
-    form.appendChild(input);
-  }
-  input.value = personId;
-}
-
-function buildEntryConfirmText(data, appData) {
-  const { produktNameById, personNameById, isCorrectionMode } = appData;
-
-  const head = isCorrectionMode
-    ? "Eintrag abziehen:"
-    : "Eintrag hinzufügen:";
-
-  const message = 
-    head + "\n\n" +
-    data.datum + "\n" +
-    personNameById[data.personId] + "\n" +
-    data.menge + " " + produktNameById[data.produktId];
-
-  return (message);
-}
-
-import { showAlert, showConfirm } from "./modal.js";
-
-export async function confirmEntryDialog(form, appData) {
-  const data = extractEntryData(form);
-  const error = validateEntryData(data);
-
-  if (error) {
-    await showAlert(error);
-    return false;
-  }
-
-  ensurePersonInput(form, data.personId);
-
-  const text = buildEntryConfirmText(data, appData);
-  return await showConfirm(text, "");
-}
-
