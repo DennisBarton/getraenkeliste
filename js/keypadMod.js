@@ -124,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         mengeField.value = qty;
 
+        console.log("Ask for confirmation");
         const confirmed = await confirmEintragNeu(form);
         closePopup();
 

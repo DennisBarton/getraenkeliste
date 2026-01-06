@@ -7,6 +7,7 @@ export async function runDialog({
   title = "",
   onConfirm
 }) {
+  console.log("call to runDialog.js");
   const data = normalize(collect());
 
   const error = validate?.(data);
@@ -15,8 +16,8 @@ export async function runDialog({
     return false;
   }
 
-  const ok = await import("./modal.js")
-    .then(m => m.showConfirm(render(data), title));
+  const modal = await import("./modal.js");
+  const ok = await modal.showConfirm(render(data), title);
 
   if (ok && onConfirm) onConfirm(data);
 

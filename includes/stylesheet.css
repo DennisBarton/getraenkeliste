@@ -531,10 +531,12 @@ td.cell-clickable:hover {
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,.4);
+  pointer-events: auto;
 }
 
 .modal-box {
   position: relative;
+  z-index: 1;
   margin: 10vh auto;
   background: white;
   max-width: 300px;
@@ -567,3 +569,14 @@ td.cell-clickable:hover {
   border-radius: 10px;
   padding: 10px;
 }
+/* optional feedback */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.modal-box.shake {
+  animation: shake 200ms ease;
+}
+

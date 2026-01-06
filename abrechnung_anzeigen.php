@@ -132,8 +132,8 @@ $today = $data['today'];
     <input type="text" id="vornameInput" placeholder="Vorname">
     <input type="text" id="nachnameInput" placeholder="Nachname">
     <div class="popup-actions">
-      <button id="confirmAddPerson" class="confirm-btn">Bestätigen</button>
-      <button id="cancelAddPerson" class="cancel-btn">Abbrechen</button>
+      <button id="confirmAddPerson" class="modal-btn-ok">Bestätigen</button>
+      <button id="cancelAddPerson" class="modal-btn-cncl">Abbrechen</button>
     </div>
   </div>
 </div>

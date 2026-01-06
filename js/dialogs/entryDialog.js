@@ -3,6 +3,7 @@ import { runDialog } from "./runDialog.js";
 import { extractFormValues } from "./formUtils.js";
 
 export function confirmEntryDialog(form, appData) {
+  console.log("call to confirmEntryDialog");
   return runDialog({
     collect: () => {
       const row = form.closest("tr");
