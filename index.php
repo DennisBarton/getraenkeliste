@@ -1,7 +1,7 @@
 <?php
 $site_name = "Übersicht";
 include ("./includes/header.php");
-echo "<meta http-equiv='refresh' content='0, URL=abrechnung_anzeigen.php?date=today'>";
+echo "<meta http-equiv='refresh' content='0, URL=abrechnung_anzeigen.php?date=latest'>";
 ?>
 
 
