@@ -112,7 +112,7 @@ try {
     }
 
     $pdo->commit();
-    header("Location: abrechnung_anzeigen.php?date=today");
+    header("Location: abrechnung_anzeigen.php?date=latest");
     exit;
 
 } catch (Exception $e) {

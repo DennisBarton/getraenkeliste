@@ -15,8 +15,18 @@ function getAbrechnungData(PDO $pdo, int $showPaid = 0, ?string $dateFilter = nu
         if ($dateFilter === 'today') {
             $dateClause = " AND date='$today' ";
         }
+        else if ($dateFilter === 'latest') {
+          $dateClause = " AND date = (
+                            SELECT MAX(date)
+                            FROM db_eintrag
+                            WHERE bezahlt = 0) ";
+        }
     } else {
-        $dateClause = " AND NOT date='$today' ";
+        //$dateClause = " AND NOT date='$today' ";
+        $dateClause = " AND NOT date = (
+                          SELECT MAX(date)
+                          FROM db_eintrag
+                          WHERE bezahlt = 0) ";
     }
     if ($showPaid) {
         $dateClause = " ";

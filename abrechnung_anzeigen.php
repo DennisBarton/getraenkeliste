@@ -11,6 +11,13 @@ if ($isCorrectionMode) {
     </div>';
 }
 
+// New Person/Entry allowed?
+$allowNew = FALSE;
+if (isset($_GET["date"]) && ($_GET["date"]==="latest" || $_GET["date"]==="today")):
+  $allowNew = TRUE;
+endif;
+
+
 // --------------------
 // Get data
 // --------------------
@@ -85,7 +92,7 @@ $today = $data['today'];
         $allPersonIds = array_keys($personById);
         $personenMitEintrag = array_keys($persons);
         $personenOhneEintrag = array_diff($allPersonIds, $personenMitEintrag);
-        if (isset($_GET["date"]) && $_GET["date"]==="today"):
+        if ($allowNew):
         ?>
         <tr class="new-entry-row">
             <td class="col-name">
@@ -116,7 +123,7 @@ $today = $data['today'];
 </table>
 <?php endforeach; ?>
 
-<?php if (isset($_GET["date"]) && $_GET["date"]==="today"): ?>
+<?php if ($allowNew): ?>
 <!-- Add Person Button -->
 <div class="add-person-container">
   <button id="addPersonBtn" class="add-person-btn" title="Neue Person hinzufügen">➕ Person</button>

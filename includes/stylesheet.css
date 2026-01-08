@@ -1,9 +1,7 @@
 /* ==============================
-   Modernized Stylesheet
-   Layout: header > nav > article > footer (stacked rows)
+   Base Layout
    ============================== */
 
-/* ----- Base Layout ----- */
 body {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
@@ -14,7 +12,6 @@ body {
   color: #222;
 }
 
-/* ----- Header ----- */
 header {
   background-color: cadetblue;
   color: white;
@@ -26,7 +23,27 @@ header {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* ----- Navigation ----- */
+article {
+  background-color: #fff;
+  border-radius: 6px;
+  padding: 20px;
+  margin-top: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+footer {
+  background-color: cadetblue;
+  color: white;
+  text-align: center;
+  padding: 10px;
+  border-radius: 6px 6px 0 0;
+  margin-top: 15px;
+}
+
+/* ==============================
+   Navigation
+   ============================== */
+
 nav {
   background-color: #e6f0f1;
   padding: 12px 0;
@@ -35,7 +52,7 @@ nav {
 }
 
 nav ul {
-  list-style-type: none;
+  list-style: none;
   margin: 0;
   padding: 0;
 }
@@ -51,250 +68,197 @@ nav a {
   text-decoration: none;
   padding: 6px 10px;
   border-radius: 6px;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color .2s, color .2s;
 }
 
-nav a:hover {
-  background-color: cadetblue;
-  color: white;
-}
-
+nav a:hover,
 nav a.active {
-  background-color: #007b7b;
-  color: white;
-}
-
-/* ----- Article (Main Content) ----- */
-article {
-  background-color: #ffffff;
-  border-radius: 6px;
-  padding: 20px;
-  margin-top: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-
-/* ----- Footer ----- */
-footer {
   background-color: cadetblue;
   color: white;
-  text-align: center;
-  padding: 10px;
-  border-radius: 6px 6px 0 0;
-  margin-top: 15px;
 }
 
-/* ----- Table Styling ----- */
+/* ==============================
+   Table Styling
+   ============================== */
+
 .styled-table {
-  border-collapse: collapse;
   width: 100%;
+  border-collapse: collapse;
   margin: 25px 0;
-  font-size: 0.95em;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+  font-size: 1.1em;
   border-radius: 6px;
   overflow: hidden;
-  font-size: 1.1em;
+  box-shadow: 0 0 10px rgba(0,0,0,.08);
 }
+
+.styled-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background-color: cadetblue; /* must be explicit to prevent transparency */
+}
+
 
 .styled-table thead tr {
   background-color: cadetblue;
-  color: #ffffff;
-  text-align: center;
+  color: #fff;
 }
 
-.styled-table th, .styled-table td {
+.styled-table th,
+.styled-table td {
   padding: 5px;
+  text-align: center;
+  vertical-align: middle;
   border-bottom: 1px solid #ddd;
+  border-right: 1px solid rgba(0,0,0,.1);
 }
 
-.styled-table tbody tr:nth-of-type(even) {
+.styled-table th:last-child,
+.styled-table td:last-child {
+  border-right: none;
+}
+
+.styled-table tbody tr:nth-child(even) {
   background-color: #f3f3f3;
 }
 
-.styled-table tbody tr:last-of-type {
+.styled-table tbody tr:last-child {
   border-bottom: 3px solid cadetblue;
-}
-
-.styled-table td.amount-cell {
-  text-align: center;
-  font-size: 1.1em;
 }
 
 .styled-table td.name-cell {
   text-align: left;
-  min-width: 120px;
-  font-weight: 500;
   padding-left: 30px;
-}
-
-/* ----- New Entry Row ----- */
-.new-entry-row form {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75em;
-}
-
-.new-entry-row select {
   min-width: 120px;
-  padding: 5px;
-  margin: 5px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  font-size: 0.85em;
-}
-
-/* Push the plus button to the right */
-.new-entry-row form::after {
-  content: "";
-  flex: 1;
-}
-
-/* ----- Popup Quantity Selector ----- */
-.qty-inline-popup {
-  position: fixed;
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  border-radius: 8px;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  opacity: 0;
-  transform: scale(0.95);
-  animation: fadeInPopup 0.2s forwards;
-  z-index: 9999;
-}
-
-.qty-inline-popup input.qty-input {
-  width: 60px;
-  padding: 4px;
-  font-size: 1em;
-  text-align: center;
-  border: 1px solid #bbb;
-  border-radius: 4px;
-}
-
-.qty-inline-popup button.ok-btn {
-  padding: 4px 10px;
-  background-color: cadetblue;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
-}
-
-.qty-inline-popup button.ok-btn:hover {
-  background-color: #007b7b;
-}
-
-/* Fade-in animation */
-@keyframes fadeInPopup {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* ----- General Inputs and Buttons ----- */
-button, input[type="image"] {
-  cursor: pointer;
-}
-
-/* Clean forms */
-form {
-  margin: 0;
-  padding: 0;
-}
-/* Center quantity content and plus buttons in product cells */
-.styled-table td {
-  text-align: center;
-  vertical-align: middle;
-}
-
-/* Make the + button centered, remove inline-block offset issues */
-.styled-table td form {
-  display: inline-block;
-  margin: 0;
-  padding: 0;
-  text-align: center;
-}
-
-/* The plus button itself */
-.styled-table td .open-qty-inline {
-  display: inline-block;
-  background: none;
-  border: none;
-  color: cadetblue;
-  font-size: 1.2em;
-  cursor: pointer;
-  vertical-align: middle;
-  transition: color 0.2s ease, transform 0.2s ease;
-}
-
-/* Hover feedback */
-.styled-table td .open-qty-inline:hover {
-  color: darkcyan;
-  transform: scale(1.1);
-}
-/* Center all product cells and make numbers 20% larger */
-.styled-table td {
-  text-align: center;
-  vertical-align: middle;
-}
-
-/* Enlarge only the visible quantity numbers */
-.styled-table td div,
-.styled-table td .anzahl {
-  font-size: 1.2em;  /* 20% larger */
   font-weight: 500;
 }
 
-/* Keep the plus buttons at normal size and centered */
-.styled-table td .open-qty-inline {
-  display: inline-block;
-  background: none;
-  border: none;
-  color: cadetblue;
-  font-size: 1em; /* normal size */
-  cursor: pointer;
-  vertical-align: middle;
-  transition: color 0.2s ease, transform 0.2s ease;
+.styled-table td.amount-cell {
+  font-size: 1.1em;
 }
 
-/* Hover feedback for the plus buttons */
-.styled-table td .open-qty-inline:hover {
-  color: darkcyan;
-  transform: scale(1.1);
-}
-/* clickable product cell appearance */
+/* clickable cells */
 td.cell-clickable {
   cursor: pointer;
 }
 
 td.cell-clickable:hover {
-  background-color: #eef7f7; /* subtle hover */
-}
-/* Subtle vertical separators between table cells */
-.styled-table td,
-.styled-table th {
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #eef7f7;
 }
 
-/* Remove the last border on the right to avoid double line */
-.styled-table td:last-child,
-.styled-table th:last-child {
-  border-right: none;
+/* ==============================
+   Quantity Display + Plus Button
+   ============================== */
+
+.styled-table td div,
+.styled-table td .anzahl {
+  font-size: 1.2em;
+  font-weight: 500;
 }
-/* -----------------------------
-   Add Person Button and Popup
------------------------------ */
+
+.styled-table td form {
+  display: inline-block;
+}
+
+.open-qty-inline {
+  background: none;
+  border: none;
+  color: cadetblue;
+  font-size: 1em;
+  cursor: pointer;
+  transition: color .2s, transform .2s;
+}
+
+.open-qty-inline:hover {
+  color: darkcyan;
+  transform: scale(1.1);
+}
+
+/* ==============================
+   New Entry Row
+   ============================== */
+
+.new-entry-row form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75em;
+}
+
+.new-entry-row form::after {
+  content: "";
+  flex: 1;
+}
+
+.new-entry-row select {
+  min-width: 120px;
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: .85em;
+}
+
+/* ==============================
+   Quantity Numpad Popup
+   ============================== */
+
+.qty-inline-popup {
+  position: fixed;
+  z-index: 3000;
+  background: #fff;
+  border: 2px solid cadetblue;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  padding: .8em;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInFast .15s ease-out forwards;
+}
+
+.qty-display {
+  font-size: 1.6em;
+  text-align: right;
+  padding: 6px 8px;
+  border-bottom: 2px solid cadetblue;
+  margin-bottom: 10px;
+  font-weight: 600;
+  user-select: none;
+}
+
+.qty-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.num-btn {
+  background-color: cadetblue;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.3em;
+  padding: 10px 0;
+  cursor: pointer;
+  transition: background-color .15s, transform .1s;
+}
+
+.num-btn:hover { background-color: darkcyan; }
+.num-btn:active { transform: scale(.95); }
+
+.num-btn[data-action="clear"] { background-color: #888; }
+.num-btn[data-action="clear"]:hover { background-color: #666; }
+
+.num-btn[data-action="ok"] {
+  background-color: #d9534f;
+  grid-column: 1 / -1;
+  font-size: 1.6em;
+  font-weight: bold;
+}
+
+/* ==============================
+   Add Person Popup
+   ============================== */
 
 .add-person-container {
   display: flex;
@@ -302,31 +266,23 @@ td.cell-clickable:hover {
   margin-top: 1rem;
 }
 
-/* + Person Button - Cadetblue Style */
 .add-person-btn {
   background-color: cadetblue;
+  font-size: 1.25em;
+  font-weight: bold;
   color: white;
-  border: none;
   border-radius: 50px;
-  padding: 0.6em 1.4em;
-  font-size: 1em;
+  padding: .6em 1.4em;
+  border: none;
   cursor: pointer;
-  font-weight: 500;
-  letter-spacing: 0.3px;
-  transition: background-color 0.2s ease, transform 0.15s ease;
-  box-shadow: 0 2px 6px rgba(95, 158, 160, 0.4);
+  transition: background-color .2s, transform .15s;
 }
 
 .add-person-btn:hover {
   background-color: darkcyan;
   transform: scale(1.05);
-  box-shadow: 0 3px 8px rgba(0, 139, 139, 0.4);
 }
 
-.add-person-btn:active {
-  transform: scale(0.97);
-}
-/* Popup overlay */
 .add-person-popup {
   position: fixed;
   inset: 0;
@@ -338,7 +294,6 @@ td.cell-clickable:hover {
   animation: fadeInFast 0.15s ease-in;
 }
 
-/* Popup box */
 .add-person-content {
   background-color: #fff;
   padding: 1.5rem;
@@ -351,7 +306,6 @@ td.cell-clickable:hover {
   text-align: center;
 }
 
-/* Input fields */
 .add-person-content input[type="text"] {
   padding: 8px;
   font-size: 1em;
@@ -359,167 +313,13 @@ td.cell-clickable:hover {
   border-radius: 4px;
 }
 
-/* Action buttons */
-.popup-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 1rem;
+/* ==============================
+   Modal System (RESTORED)
+   ============================== */
+
+.modal.hidden {
+  display: none;
 }
-
-.confirm-btn, .cancel-btn {
-  flex: 1;
-  padding: 0.6em;
-  margin: 0 0.3em;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.confirm-btn {
-  background-color: #4CAF50;
-  color: white;
-}
-.cancel-btn {
-  background-color: #ccc;
-}
-.cancel-btn:hover {
-  background-color: #bbb;
-}
-
-/* Fade animation */
-@keyframes fadeInFast {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-* ============================
-   Numeric Numpad Popup (Mobile + Desktop)
-   ============================ */
-
-/* Fade-in animation */
-@keyframes fadeInFast {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-/* Popup container */
-.qty-inline-popup {
-  position: fixed;
-  z-index: 3000;
-  background: #fff;
-  border: 2px solid cadetblue;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-  padding: 0.8em;
-  width: 200px;
-  animation: fadeInFast 0.15s ease-out forwards;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-}
-
-/* Quantity display */
-.qty-inline-popup .qty-display {
-  font-size: 1.6em;
-  text-align: right;
-  padding: 6px 8px;
-  border-bottom: 2px solid cadetblue;
-  margin-bottom: 10px;
-  font-weight: 600;
-  line-height: 1.2;
-  user-select: none;
-}
-
-/* Grid for numeric buttons */
-.qty-inline-popup .qty-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-/* Base keypad button */
-.qty-inline-popup .num-btn {
-  background-color: cadetblue;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.3em;
-  padding: 10px 0;
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.15s ease, transform 0.1s ease;
-  touch-action: manipulation;
-}
-
-.qty-inline-popup .num-btn:hover {
-  background-color: darkcyan;
-}
-
-.qty-inline-popup .num-btn:active {
-  transform: scale(0.95);
-}
-
-/* Clear button */
-.qty-inline-popup .num-btn[data-action="clear"] {
-  background-color: #888;
-}
-
-.qty-inline-popup .num-btn[data-action="clear"]:hover {
-  background-color: #666;
-}
-
-/* ➕ OK button — full-width, red, larger */
-.qty-inline-popup .num-btn[data-action="ok"] {
-  background-color: #d9534f;
-  font-size: 1.6em;
-  font-weight: bold;
-  border-radius: 10px;
-  grid-column: 1 / -1;          /* spans all 3 columns */
-  padding: 12px 0;
-}
-
-.qty-inline-popup .num-btn[data-action="ok"]:hover {
-  background-color: #c9302c;
-}
-
-.qty-inline-popup .num-btn[data-action="ok"]:active {
-  background-color: #b52b27;
-  transform: scale(0.95);
-}
-
-/* Mobile layout adjustments */
-@media (max-width: 768px) {
-  .qty-inline-popup {
-    width: 80vw;
-    max-width: 280px;
-    padding: 1em;
-  }
-
-  .qty-inline-popup .qty-display {
-    font-size: 2em;
-  }
-
-  .qty-inline-popup .num-btn {
-    font-size: 1.6em;
-    padding: 12px 0;
-  }
-
-  .qty-inline-popup .num-btn[data-action="ok"] {
-    font-size: 2em;
-    padding: 14px 0;
-  }
-
-  /* Subtle backdrop for focus */
-  .qty-inline-popup::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.25);
-    z-index: -1;
-  }
-}
-.modal.hidden { display: none; }
 
 .modal {
   position: fixed;
@@ -545,6 +345,7 @@ td.cell-clickable:hover {
   padding-right: 3rem;
   border-radius: 6px;
 }
+
 .modal-content {
   white-space: pre-line;
 }
@@ -560,6 +361,7 @@ td.cell-clickable:hover {
   cursor: pointer;
   margin-right: 20px;
 }
+
 .modal-btn-cncl {
   background-color: #d9534f;
   color: #fff;
@@ -569,7 +371,8 @@ td.cell-clickable:hover {
   border-radius: 10px;
   padding: 10px;
 }
-/* optional feedback */
+
+/* Optional feedback */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-4px); }
@@ -580,3 +383,26 @@ td.cell-clickable:hover {
   animation: shake 200ms ease;
 }
 
+/* ==============================
+   Animations & Utilities
+   ============================== */
+
+@keyframes fadeInFast {
+  from { opacity: 0; transform: scale(.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shake {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+button,
+input[type="image"] {
+  cursor: pointer;
+}
+
+form {
+  margin: 0;
+  padding: 0;
+}
