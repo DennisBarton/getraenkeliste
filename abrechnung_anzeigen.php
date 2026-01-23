@@ -59,7 +59,7 @@ $today = $data['today'];
             <?php foreach ($produktById as $produktId => $produkt):
                 $anzahl = $personData['produkte'][$produktId] ?? 0;
                 $betrag += $anzahl * $produkt['preis']; ?>
-                <td class="col-prod cell-clickable">
+                <td class="amount-cell cell-clickable">
                     <?php if ($anzahl != 0): ?><span class="anzahl"><?= $anzahl ?></span><?php endif; ?>
                     <?php if (!$showPaid): ?>
                       <form action="eintrag_speichern.php" method="post" class="cell-click-form" onsubmit="return confirmEintragNeu(this)">
@@ -73,14 +73,14 @@ $today = $data['today'];
                     <?php endif; ?>
                 </td>
             <?php endforeach; ?>
-            <td class="col-total"><?= number_format($betrag, 2) ?> &#8364;</td>
+            <td class="amount-cell"><?= number_format($betrag, 2) ?> &#8364;</td>
             <td class="col-pay">
                 <?php if (!$showPaid): ?>
                 <form action="eintrag_speichern.php" method="post" class="formBezahlen" onsubmit="return confirmVerkauf(event)">
                     <input type="hidden" name="action" value="bezahlen">
                     <input type="hidden" name="date" value="<?= $datum ?>">
                     <input type="hidden" name="personId" value="<?= $personId ?>">
-                    <input type="image" src="./includes/euro.svg" width="30" alt="Bezahlen" title="Bezahlen">
+                    <input type="image" src="./includes/euro.svg" width="35" alt="Bezahlen" title="Bezahlen">
                 </form>
                 <?php endif; ?>
             </td>
@@ -95,7 +95,7 @@ $today = $data['today'];
         if ($allowNew):
         ?>
         <tr class="new-entry-row">
-            <td class="col-name">
+            <td class="name-cell">
                 <select name="Person_ID" id="person-select-<?= $datum ?>" required>
                     <option value="">Person wählen</option>
                     <?php foreach ($personenOhneEintrag as $id):

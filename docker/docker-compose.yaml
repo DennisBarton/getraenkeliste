@@ -1,0 +1,43 @@
+services:
+  php-apache:
+    build:
+      context: ./php-apache_new
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - /home/dennis/werke/getraenkeliste:/var/www/html/getraenkeliste
+    links:
+      - 'mariadb'
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.0.1
+    restart: always
+    environment:
+      PMA_HOST: mariadb
+      PMA_USER: root
+      PMA_PASSWORD: rootpwd
+    ports:
+      - "8080:80"
+    links:
+      - 'mariadb'
+
+  mariadb:
+    image: mariadb:10.6
+    restart: always
+    volumes:
+      - /home/dennis/Docker/mariadb:/var/lib/mysql
+    environment:
+      TZ: "Europe:Berlin"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+      MYSQL_ROOT_PASSWORD: "rootpwd"
+
+  python:
+    image: python:3.10-slim
+    command: sleep infinity
+    restart: always
+    volumes:
+      - ../tmp:/tmp
+
+
+
