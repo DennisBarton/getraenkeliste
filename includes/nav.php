@@ -3,6 +3,7 @@
   <a href="abrechnung_anzeigen.php">Offene Zahlungen</a>
   <a href="abrechnung_anzeigen.php?paid=1">Bezahlte Einträge</a>
   <a href="abrechnung_anzeigen.php?date=today" style="color:grey; font-weight:bold">NEUE LISTE</a>
+  <a href="anmeldung.php" style="color:black; font-size: 1.4em; font-weight:bold">ANMELDUNG</a>
 <!--
   <p><li><a href="index.php">Home</a></li></p>
   <li><a href="kunden.php">Kunden</a></li>

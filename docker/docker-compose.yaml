@@ -31,13 +31,3 @@ services:
       TZ: "Europe:Berlin"
       MYSQL_ALLOW_EMPTY_PASSWORD: "no"
       MYSQL_ROOT_PASSWORD: "rootpwd"
-
-  python:
-    image: python:3.10-slim
-    command: sleep infinity
-    restart: always
-    volumes:
-      - ../tmp:/tmp
-
-
-
